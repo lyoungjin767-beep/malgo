@@ -4,7 +4,6 @@ import com.malgo.backend.auth.dto.LoginRequest;
 import com.malgo.backend.auth.dto.SignupRequest;
 import com.malgo.backend.auth.service.AuthService;
 import jakarta.validation.Valid;
-import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,12 +22,12 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<Map<String, Object>> signUp(@Valid @RequestBody SignupRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.signUp(request));
+    public ResponseEntity<Long> signUp(@Valid @RequestBody SignupRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.signup(request));
     }
 
     @PostMapping("/login")
-    public Map<String, Object> login(@Valid @RequestBody LoginRequest request) {
+    public Long login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 }

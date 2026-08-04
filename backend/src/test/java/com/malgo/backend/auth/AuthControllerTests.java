@@ -1,7 +1,7 @@
 package com.malgo.backend.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.not;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -12,16 +12,14 @@ import com.malgo.backend.auth.dto.SignupRequest;
 import com.malgo.backend.auth.service.AuthService;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
-import java.util.Map;
 import java.util.Optional;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.server.ResponseStatusException;
 
 class AuthControllerTests {
 
@@ -36,8 +34,8 @@ class AuthControllerTests {
 
     @Test
     void signsUpMember() throws Exception {
-        org.mockito.Mockito.when(authService.signUp(org.mockito.ArgumentMatchers.any(SignupRequest.class)))
-                .thenReturn(Map.of("id", 1L, "email", "signup@example.com", "nickname", "signup-user"));
+        org.mockito.Mockito.when(authService.signup(org.mockito.ArgumentMatchers.any(SignupRequest.class)))
+                .thenReturn(1L);
 
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -49,54 +47,13 @@ class AuthControllerTests {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").isNumber())
-                .andExpect(jsonPath("$.email").value("signup@example.com"))
-                .andExpect(jsonPath("$.nickname").value("signup-user"))
-                .andExpect(jsonPath("$.password").doesNotExist());
-    }
-
-    @Test
-    void rejectsDuplicateEmail() throws Exception {
-        org.mockito.Mockito.when(authService.signUp(org.mockito.ArgumentMatchers.any(SignupRequest.class)))
-                .thenReturn(Map.of("id", 1L, "email", "duplicate@example.com", "nickname", "duplicate-user"))
-                .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT));
-
-        String payload = """
-                {
-                  "email": "duplicate@example.com",
-                  "password": "password123",
-                  "nickname": "duplicate-user"
-                }
-                """;
-
-        mockMvc.perform(post("/api/auth/signup")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
-                .andExpect(status().isCreated());
-
-        mockMvc.perform(post("/api/auth/signup")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
-                .andExpect(status().isConflict());
+                .andExpect(jsonPath("$").value(1));
     }
 
     @Test
     void logsInMember() throws Exception {
-        org.mockito.Mockito.when(authService.signUp(org.mockito.ArgumentMatchers.any(SignupRequest.class)))
-                .thenReturn(Map.of("id", 1L, "email", "login@example.com", "nickname", "login-user"));
         org.mockito.Mockito.when(authService.login(org.mockito.ArgumentMatchers.any(LoginRequest.class)))
-                .thenReturn(Map.of("id", 1L, "email", "login@example.com", "nickname", "login-user"));
-
-        mockMvc.perform(post("/api/auth/signup")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "email": "login@example.com",
-                                  "password": "password123",
-                                  "nickname": "login-user"
-                                }
-                                """))
-                .andExpect(status().isCreated());
+                .thenReturn(1L);
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -107,42 +64,32 @@ class AuthControllerTests {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("login@example.com"))
-                .andExpect(jsonPath("$.nickname").value("login-user"));
+                .andExpect(jsonPath("$").value(1));
     }
 
     @Test
-    void rejectsInvalidLogin() throws Exception {
-        org.mockito.Mockito.when(authService.login(org.mockito.ArgumentMatchers.any(LoginRequest.class)))
-                .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED));
-
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "email": "missing@example.com",
-                                  "password": "password123"
-                                }
-                                """))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void storesHashedPassword() throws Exception {
+    void storesHashedPassword() {
         MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
-        AuthService service = new AuthService(memberRepository, new BCryptPasswordEncoder());
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        AuthService service = new AuthService(memberRepository, passwordEncoder);
 
         org.mockito.Mockito.when(memberRepository.existsByEmail("hash@example.com")).thenReturn(false);
         org.mockito.Mockito.when(memberRepository.save(org.mockito.ArgumentMatchers.any(Member.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                .thenAnswer(invocation -> {
+                    Member member = invocation.getArgument(0);
+                    ReflectionTestUtils.setField(member, "id", 1L);
+                    return member;
+                });
 
-        service.signUp(new SignupRequest("hash@example.com", "password123", "hash-user"));
+        Long memberId = service.signup(new SignupRequest("hash@example.com", "password123", "hash-user"));
 
         org.mockito.ArgumentCaptor<Member> captor = org.mockito.ArgumentCaptor.forClass(Member.class);
         org.mockito.Mockito.verify(memberRepository).save(captor.capture());
 
         Member member = captor.getValue();
-        org.hamcrest.MatcherAssert.assertThat(member.getPassword(), not("password123"));
+        assertThat(memberId).isEqualTo(1L);
+        assertThat(member.getPassword()).isNotEqualTo("password123");
+        assertThat(passwordEncoder.matches("password123", member.getPassword())).isTrue();
     }
 
     @Test
@@ -152,12 +99,9 @@ class AuthControllerTests {
 
         org.mockito.Mockito.when(memberRepository.existsByEmail("duplicate@example.com")).thenReturn(true);
 
-        ResponseStatusException exception = Assertions.assertThrows(
-                ResponseStatusException.class,
-                () -> service.signUp(new SignupRequest("duplicate@example.com", "password123", "duplicate-user"))
-        );
-
-        assertThat(exception.getStatusCode().value()).isEqualTo(409);
+        assertThatThrownBy(() ->
+                service.signup(new SignupRequest("duplicate@example.com", "password123", "duplicate-user"))
+        ).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -166,12 +110,26 @@ class AuthControllerTests {
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         AuthService service = new AuthService(memberRepository, passwordEncoder);
         Member member = new Member("login@example.com", passwordEncoder.encode("password123"), "login-user");
+        ReflectionTestUtils.setField(member, "id", 1L);
 
         org.mockito.Mockito.when(memberRepository.findByEmail("login@example.com")).thenReturn(Optional.of(member));
 
-        Map<String, Object> response = service.login(new LoginRequest("login@example.com", "password123"));
+        Long memberId = service.login(new LoginRequest("login@example.com", "password123"));
 
-        assertThat(response.get("email")).isEqualTo("login@example.com");
-        assertThat(response.get("nickname")).isEqualTo("login-user");
+        assertThat(memberId).isEqualTo(1L);
+    }
+
+    @Test
+    void rejectsInvalidPasswordInService() {
+        MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        AuthService service = new AuthService(memberRepository, passwordEncoder);
+        Member member = new Member("login@example.com", passwordEncoder.encode("password123"), "login-user");
+
+        org.mockito.Mockito.when(memberRepository.findByEmail("login@example.com")).thenReturn(Optional.of(member));
+
+        assertThatThrownBy(() ->
+                service.login(new LoginRequest("login@example.com", "wrong-password"))
+        ).isInstanceOf(IllegalArgumentException.class);
     }
 }

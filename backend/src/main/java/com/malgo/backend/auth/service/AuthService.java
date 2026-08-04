@@ -4,58 +4,62 @@ import com.malgo.backend.auth.dto.LoginRequest;
 import com.malgo.backend.auth.dto.SignupRequest;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AuthService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthService(MemberRepository memberRepository, PasswordEncoder passwordEncoder) {
-        this.memberRepository = memberRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
     @Transactional
-    public Map<String, Object> signUp(SignupRequest request) {
-        String email = request.email().trim().toLowerCase();
-        if (memberRepository.existsByEmail(email)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered.");
+    public Long signup(SignupRequest request) {
+
+        if (memberRepository.existsByEmail(request.email())) {
+            throw new IllegalArgumentException(
+                    "이미 가입된 이메일입니다."
+            );
         }
+
+        String encodedPassword =
+                passwordEncoder.encode(request.password());
 
         Member member = new Member(
-                email,
-                passwordEncoder.encode(request.password()),
-                request.nickname().trim()
+                request.email(),
+                encodedPassword,
+                request.nickname()
         );
-        return toResponse(memberRepository.save(member));
+
+        Member savedMember = memberRepository.save(member);
+
+        return savedMember.getId();
     }
 
-    @Transactional(readOnly = true)
-    public Map<String, Object> login(LoginRequest request) {
-        String email = request.email().trim().toLowerCase();
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password."));
+    public Long login(LoginRequest request) {
 
-        if (!passwordEncoder.matches(request.password(), member.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
+        Member member = memberRepository.findByEmail(request.email())
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "이메일 또는 비밀번호가 올바르지 않습니다."
+                        )
+                );
+
+        boolean passwordMatches = passwordEncoder.matches(
+                request.password(),
+                member.getPassword()
+        );
+
+        if (!passwordMatches) {
+            throw new IllegalArgumentException(
+                    "이메일 또는 비밀번호가 올바르지 않습니다."
+            );
         }
 
-        return toResponse(member);
-    }
-
-    private Map<String, Object> toResponse(Member member) {
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("id", member.getId());
-        response.put("email", member.getEmail());
-        response.put("nickname", member.getNickname());
-        return response;
+        return member.getId();
     }
 }
