@@ -23,6 +23,16 @@ public class EmailVerificationService {
             String email,
             VerificationPurpose purpose
     ) {
+        String code = createVerificationCode(email, purpose);
+
+        mailService.sendVerificationCode(email, code);
+    }
+
+    @Transactional
+    public String createVerificationCode(
+            String email,
+            VerificationPurpose purpose
+    ) {
         String code = String.format(
                 "%06d",
                 secureRandom.nextInt(1_000_000)
@@ -32,7 +42,8 @@ public class EmailVerificationService {
                 new EmailVerification(email, code, purpose);
 
         verificationRepository.save(verification);
-        mailService.sendVerificationCode(email, code);
+
+        return code;
     }
 
     @Transactional
@@ -81,5 +92,27 @@ public class EmailVerificationService {
                 .filter(verification -> !verification.isExpired())
                 .filter(EmailVerification::isVerified)
                 .isPresent();
+    }
+
+    @Transactional
+    public void consumeVerification(
+            String email,
+            VerificationPurpose purpose
+    ) {
+        EmailVerification verification =
+                verificationRepository
+                        .findTopByEmailAndPurposeOrderByCreatedAtDesc(
+                                email,
+                                purpose
+                        )
+                        .filter(savedVerification -> !savedVerification.isExpired())
+                        .filter(EmailVerification::isVerified)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "완료된 인증 정보가 없습니다."
+                                )
+                        );
+
+        verificationRepository.delete(verification);
     }
 }

@@ -28,4 +28,22 @@ public class MailService {
 
         mailSender.send(message);
     }
+
+    public void sendPasswordResetVerificationCode(
+            String email,
+            String verificationCode
+    ) {
+        SimpleMailMessage message = new SimpleMailMessage();
+
+        message.setTo(email);
+        message.setSubject("[Malgo] 비밀번호 재설정 인증번호 안내");
+        message.setText(
+                "비밀번호 재설정 인증번호는 "
+                        + verificationCode
+                        + "입니다.\n"
+                        + "인증번호는 3분 동안 유효합니다."
+        );
+
+        mailSender.send(message);
+    }
 }
