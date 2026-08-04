@@ -26,6 +26,9 @@ public class Member {
     @Column(nullable = false, length = 30)
     private String nickname;
 
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -33,6 +36,7 @@ public class Member {
         this.email = email;
         this.password = password;
         this.nickname = nickname;
+        this.emailVerified = true;
         this.createdAt = LocalDateTime.now();
     }
 }
