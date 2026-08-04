@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.malgo.backend.auth.controller.AuthController;
 import com.malgo.backend.auth.dto.LoginRequest;
+import com.malgo.backend.auth.dto.PasswordResetRequest;
 import com.malgo.backend.auth.dto.SignupRequest;
 import com.malgo.backend.auth.entity.EmailVerification;
 import com.malgo.backend.auth.entity.VerificationPurpose;
@@ -253,5 +254,59 @@ class AuthControllerTests {
         assertThatThrownBy(() ->
                 service.login(new LoginRequest("login@example.com", "wrong-password"))
         ).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void resetsPasswordInService() {
+        MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
+        EmailVerificationService emailVerificationService = org.mockito.Mockito.mock(EmailVerificationService.class);
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        AuthService service = new AuthService(memberRepository, passwordEncoder, emailVerificationService);
+        Member member = new Member("reset@example.com", passwordEncoder.encode("oldPassword123"), "reset-user");
+
+        org.mockito.Mockito.when(emailVerificationService.isVerified(
+                        "reset@example.com",
+                        VerificationPurpose.PASSWORD_RESET
+                ))
+                .thenReturn(true);
+        org.mockito.Mockito.when(memberRepository.findByEmail("reset@example.com")).thenReturn(Optional.of(member));
+
+        service.resetPassword(new PasswordResetRequest("reset@example.com", "newPassword123", "newPassword123"));
+
+        assertThat(passwordEncoder.matches("newPassword123", member.getPassword())).isTrue();
+        assertThat(passwordEncoder.matches("oldPassword123", member.getPassword())).isFalse();
+    }
+
+    @Test
+    void rejectsPasswordResetConfirmMismatchInService() {
+        MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
+        EmailVerificationService emailVerificationService = org.mockito.Mockito.mock(EmailVerificationService.class);
+        AuthService service = new AuthService(memberRepository, new BCryptPasswordEncoder(), emailVerificationService);
+
+        assertThatThrownBy(() ->
+                service.resetPassword(new PasswordResetRequest("reset@example.com", "newPassword123", "different123"))
+        ).isInstanceOf(IllegalArgumentException.class);
+
+        org.mockito.Mockito.verifyNoInteractions(memberRepository);
+        org.mockito.Mockito.verifyNoInteractions(emailVerificationService);
+    }
+
+    @Test
+    void rejectsUnverifiedPasswordResetInService() {
+        MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
+        EmailVerificationService emailVerificationService = org.mockito.Mockito.mock(EmailVerificationService.class);
+        AuthService service = new AuthService(memberRepository, new BCryptPasswordEncoder(), emailVerificationService);
+
+        org.mockito.Mockito.when(emailVerificationService.isVerified(
+                        "reset@example.com",
+                        VerificationPurpose.PASSWORD_RESET
+                ))
+                .thenReturn(false);
+
+        assertThatThrownBy(() ->
+                service.resetPassword(new PasswordResetRequest("reset@example.com", "newPassword123", "newPassword123"))
+        ).isInstanceOf(IllegalArgumentException.class);
+
+        org.mockito.Mockito.verify(memberRepository, org.mockito.Mockito.never()).findByEmail("reset@example.com");
     }
 }

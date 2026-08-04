@@ -39,4 +39,8 @@ public class Member {
         this.emailVerified = true;
         this.createdAt = LocalDateTime.now();
     }
+
+    public void changePassword(String password) {
+        this.password = password;
+    }
 }
