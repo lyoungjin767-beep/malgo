@@ -1,8 +1,12 @@
 package com.malgo.backend.auth.controller;
 
 import com.malgo.backend.auth.dto.LoginRequest;
+import com.malgo.backend.auth.dto.EmailCodeSendRequest;
+import com.malgo.backend.auth.dto.EmailCodeVerifyRequest;
 import com.malgo.backend.auth.dto.SignupRequest;
+import com.malgo.backend.auth.entity.VerificationPurpose;
 import com.malgo.backend.auth.service.AuthService;
+import com.malgo.backend.auth.service.EmailVerificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +21,36 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailVerificationService emailVerificationService;
+
+    @PostMapping("/email/send")
+    public ResponseEntity<Map<String, String>> sendSignupCode(
+            @Valid @RequestBody EmailCodeSendRequest request
+    ) {
+        emailVerificationService.sendCode(
+                request.email(),
+                VerificationPurpose.SIGNUP
+        );
+
+        return ResponseEntity.ok(
+                Map.of("message", "인증번호를 전송했습니다.")
+        );
+    }
+
+    @PostMapping("/email/verify")
+    public ResponseEntity<Map<String, String>> verifySignupCode(
+            @Valid @RequestBody EmailCodeVerifyRequest request
+    ) {
+        emailVerificationService.verifyCode(
+                request.email(),
+                request.code(),
+                VerificationPurpose.SIGNUP
+        );
+
+        return ResponseEntity.ok(
+                Map.of("message", "이메일 인증에 성공했습니다.")
+        );
+    }
 
     @PostMapping("/signup")
     public ResponseEntity<Map<String, Object>> signup(

@@ -29,12 +29,47 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class AuthControllerTests {
 
     private AuthService authService;
+    private EmailVerificationService emailVerificationService;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         authService = org.mockito.Mockito.mock(AuthService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(authService)).build();
+        emailVerificationService = org.mockito.Mockito.mock(EmailVerificationService.class);
+        mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(authService, emailVerificationService)).build();
+    }
+
+    @Test
+    void sendsSignupEmailCode() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/email/send")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "signup@example.com"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("인증번호를 전송했습니다."));
+
+        org.mockito.Mockito.verify(emailVerificationService)
+                .sendCode("signup@example.com", VerificationPurpose.SIGNUP);
+    }
+
+    @Test
+    void verifiesSignupEmailCode() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/email/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "signup@example.com",
+                                  "code": "123456"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("이메일 인증에 성공했습니다."));
+
+        org.mockito.Mockito.verify(emailVerificationService)
+                .verifyCode("signup@example.com", "123456", VerificationPurpose.SIGNUP);
     }
 
     @Test
