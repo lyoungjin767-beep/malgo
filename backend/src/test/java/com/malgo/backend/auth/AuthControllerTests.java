@@ -9,9 +9,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.malgo.backend.auth.controller.AuthController;
 import com.malgo.backend.auth.dto.LoginRequest;
 import com.malgo.backend.auth.dto.SignupRequest;
+import com.malgo.backend.auth.entity.EmailVerification;
 import com.malgo.backend.auth.entity.VerificationPurpose;
+import com.malgo.backend.auth.repository.EmailVerificationRepository;
 import com.malgo.backend.auth.service.AuthService;
 import com.malgo.backend.auth.service.EmailVerificationService;
+import com.malgo.backend.auth.service.MailService;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
 import java.util.Optional;
@@ -146,14 +149,44 @@ class AuthControllerTests {
     }
 
     @Test
-    void emailVerificationServiceStoresVerifiedEmail() {
-        EmailVerificationService emailVerificationService = new EmailVerificationService();
+    void emailVerificationServiceChecksLatestVerifiedEmail() {
+        EmailVerificationRepository verificationRepository =
+                org.mockito.Mockito.mock(EmailVerificationRepository.class);
+        MailService mailService = org.mockito.Mockito.mock(MailService.class);
+        EmailVerificationService emailVerificationService =
+                new EmailVerificationService(verificationRepository, mailService);
+        EmailVerification verification =
+                new EmailVerification("verify@example.com", "123456", VerificationPurpose.SIGNUP);
+        verification.verify();
 
-        assertThat(emailVerificationService.isVerified("verify@example.com", VerificationPurpose.SIGNUP)).isFalse();
+        org.mockito.Mockito.when(verificationRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(
+                        "verify@example.com",
+                        VerificationPurpose.SIGNUP
+                ))
+                .thenReturn(Optional.of(verification));
 
-        emailVerificationService.markVerified("verify@example.com", VerificationPurpose.SIGNUP);
+        assertThat(emailVerificationService.isVerified("verify@example.com", VerificationPurpose.SIGNUP)).isTrue();
+    }
 
-        assertThat(emailVerificationService.isVerified("VERIFY@example.com", VerificationPurpose.SIGNUP)).isTrue();
+    @Test
+    void emailVerificationServiceVerifiesCode() {
+        EmailVerificationRepository verificationRepository =
+                org.mockito.Mockito.mock(EmailVerificationRepository.class);
+        MailService mailService = org.mockito.Mockito.mock(MailService.class);
+        EmailVerificationService emailVerificationService =
+                new EmailVerificationService(verificationRepository, mailService);
+        EmailVerification verification =
+                new EmailVerification("verify@example.com", "123456", VerificationPurpose.SIGNUP);
+
+        org.mockito.Mockito.when(verificationRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(
+                        "verify@example.com",
+                        VerificationPurpose.SIGNUP
+                ))
+                .thenReturn(Optional.of(verification));
+
+        emailVerificationService.verifyCode("verify@example.com", "123456", VerificationPurpose.SIGNUP);
+
+        assertThat(verification.isVerified()).isTrue();
     }
 
     @Test
