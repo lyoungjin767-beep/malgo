@@ -4,10 +4,14 @@ import com.malgo.backend.auth.dto.LoginRequest;
 import com.malgo.backend.auth.dto.EmailCodeSendRequest;
 import com.malgo.backend.auth.dto.EmailCodeVerifyRequest;
 import com.malgo.backend.auth.dto.SignupRequest;
+import com.malgo.backend.auth.dto.PasswordResetRequest;
+import com.malgo.backend.auth.dto.PasswordResetSendRequest;
+import com.malgo.backend.auth.dto.PasswordResetVerifyRequest;
 import com.malgo.backend.auth.entity.VerificationPurpose;
 import com.malgo.backend.auth.service.AuthService;
 import com.malgo.backend.auth.service.EmailVerificationService;
 import com.malgo.backend.auth.service.MailService;
+import com.malgo.backend.auth.service.PasswordResetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +28,7 @@ public class AuthController {
     private final AuthService authService;
     private final EmailVerificationService emailVerificationService;
     private final MailService mailService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/email/send")
     public ResponseEntity<Map<String, String>> sendSignupCode(
@@ -84,6 +89,48 @@ public class AuthController {
                 Map.of(
                         "message", "로그인에 성공했습니다.",
                         "memberId", memberId
+                )
+        );
+    }
+
+    @PostMapping("/password/reset/send")
+    public ResponseEntity<Map<String, String>> sendPasswordResetCode(
+            @Valid @RequestBody PasswordResetSendRequest request
+    ) {
+        passwordResetService.sendResetCode(request);
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "message",
+                        "비밀번호 재설정 인증번호를 발송했습니다."
+                )
+        );
+    }
+
+    @PostMapping("/password/reset/verify")
+    public ResponseEntity<Map<String, String>> verifyPasswordResetCode(
+            @Valid @RequestBody PasswordResetVerifyRequest request
+    ) {
+        passwordResetService.verifyResetCode(request);
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "message",
+                        "비밀번호 재설정 이메일 인증에 성공했습니다."
+                )
+        );
+    }
+
+    @PostMapping("/password/reset")
+    public ResponseEntity<Map<String, String>> resetPassword(
+            @Valid @RequestBody PasswordResetRequest request
+    ) {
+        passwordResetService.resetPassword(request);
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "message",
+                        "비밀번호가 변경되었습니다."
                 )
         );
     }

@@ -36,6 +36,7 @@ class AuthControllerTests {
     private AuthService authService;
     private EmailVerificationService emailVerificationService;
     private MailService mailService;
+    private PasswordResetService passwordResetService;
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -43,8 +44,9 @@ class AuthControllerTests {
         authService = org.mockito.Mockito.mock(AuthService.class);
         emailVerificationService = org.mockito.Mockito.mock(EmailVerificationService.class);
         mailService = org.mockito.Mockito.mock(MailService.class);
+        passwordResetService = org.mockito.Mockito.mock(PasswordResetService.class);
         mockMvc = MockMvcBuilders.standaloneSetup(
-                new AuthController(authService, emailVerificationService, mailService)
+                new AuthController(authService, emailVerificationService, mailService, passwordResetService)
         ).build();
     }
 
@@ -87,6 +89,57 @@ class AuthControllerTests {
 
         org.mockito.Mockito.verify(emailVerificationService)
                 .verifyCode("signup@example.com", "123456", VerificationPurpose.SIGNUP);
+    }
+
+    @Test
+    void sendsPasswordResetCode() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/password/reset/send")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "reset@example.com"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("비밀번호 재설정 인증번호를 발송했습니다."));
+
+        org.mockito.Mockito.verify(passwordResetService)
+                .sendResetCode(org.mockito.ArgumentMatchers.any(PasswordResetSendRequest.class));
+    }
+
+    @Test
+    void verifiesPasswordResetCode() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/password/reset/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "reset@example.com",
+                                  "verificationCode": "123456"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("비밀번호 재설정 이메일 인증에 성공했습니다."));
+
+        org.mockito.Mockito.verify(passwordResetService)
+                .verifyResetCode(org.mockito.ArgumentMatchers.any(PasswordResetVerifyRequest.class));
+    }
+
+    @Test
+    void resetsPassword() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/password/reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "reset@example.com",
+                                  "newPassword": "newPassword123",
+                                  "newPasswordConfirm": "newPassword123"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("비밀번호가 변경되었습니다."));
+
+        org.mockito.Mockito.verify(passwordResetService)
+                .resetPassword(org.mockito.ArgumentMatchers.any(PasswordResetRequest.class));
     }
 
     @Test
