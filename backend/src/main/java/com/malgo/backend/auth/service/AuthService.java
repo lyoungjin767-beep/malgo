@@ -32,7 +32,7 @@ public class AuthService {
         Member member = new Member(
                 request.email(),
                 encodedPassword,
-                request.nickname()
+                request.name()
         );
 
         Member savedMember = memberRepository.save(member);

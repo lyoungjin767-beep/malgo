@@ -41,9 +41,10 @@ class AuthControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
+                                  "name": "signup-user",
                                   "email": "signup@example.com",
                                   "password": "password123",
-                                  "nickname": "signup-user"
+                                  "passwordConfirm": "password123"
                                 }
                                 """))
                 .andExpect(status().isCreated())
@@ -83,7 +84,7 @@ class AuthControllerTests {
                     return member;
                 });
 
-        Long memberId = service.signup(new SignupRequest("hash@example.com", "password123", "hash-user"));
+        Long memberId = service.signup(new SignupRequest("hash-user", "hash@example.com", "password123", "password123"));
 
         org.mockito.ArgumentCaptor<Member> captor = org.mockito.ArgumentCaptor.forClass(Member.class);
         org.mockito.Mockito.verify(memberRepository).save(captor.capture());
@@ -102,7 +103,7 @@ class AuthControllerTests {
         org.mockito.Mockito.when(memberRepository.existsByEmail("duplicate@example.com")).thenReturn(true);
 
         assertThatThrownBy(() ->
-                service.signup(new SignupRequest("duplicate@example.com", "password123", "duplicate-user"))
+                service.signup(new SignupRequest("duplicate-user", "duplicate@example.com", "password123", "password123"))
         ).isInstanceOf(IllegalArgumentException.class);
     }
 
