@@ -36,7 +36,7 @@ public class MailService {
         SimpleMailMessage message = new SimpleMailMessage();
 
         message.setTo(email);
-        message.setSubject("[Malgo] 비밀번호 재설정 인증번호 안내");
+        message.setSubject("[Malgo] 비밀번호 재설정 인증번호");
         message.setText(
                 "비밀번호 재설정 인증번호는 "
                         + verificationCode
