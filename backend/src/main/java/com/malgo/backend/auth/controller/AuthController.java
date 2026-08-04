@@ -7,6 +7,7 @@ import com.malgo.backend.auth.dto.SignupRequest;
 import com.malgo.backend.auth.entity.VerificationPurpose;
 import com.malgo.backend.auth.service.AuthService;
 import com.malgo.backend.auth.service.EmailVerificationService;
+import com.malgo.backend.auth.service.MailService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,14 +23,21 @@ public class AuthController {
 
     private final AuthService authService;
     private final EmailVerificationService emailVerificationService;
+    private final MailService mailService;
 
     @PostMapping("/email/send")
     public ResponseEntity<Map<String, String>> sendSignupCode(
             @Valid @RequestBody EmailCodeSendRequest request
     ) {
-        emailVerificationService.sendCode(
+        String verificationCode =
+                emailVerificationService.createVerificationCode(
+                        request.email(),
+                        VerificationPurpose.SIGNUP
+                );
+
+        mailService.sendVerificationCode(
                 request.email(),
-                VerificationPurpose.SIGNUP
+                verificationCode
         );
 
         return ResponseEntity.ok(

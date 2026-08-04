@@ -8,25 +8,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class EmailVerificationService {
 
-    private final EmailVerificationRepository verificationRepository;
-    private final MailService mailService;
+    private static final int CODE_BOUND = 1_000_000;
+    private static final int CODE_LENGTH = 6;
+    private static final long EXPIRATION_MINUTES = 3;
 
+    private final EmailVerificationRepository repository;
     private final SecureRandom secureRandom = new SecureRandom();
-
-    @Transactional
-    public void sendCode(
-            String email,
-            VerificationPurpose purpose
-    ) {
-        String code = createVerificationCode(email, purpose);
-
-        mailService.sendVerificationCode(email, code);
-    }
 
     @Transactional
     public String createVerificationCode(
@@ -34,14 +28,22 @@ public class EmailVerificationService {
             VerificationPurpose purpose
     ) {
         String code = String.format(
-                "%06d",
-                secureRandom.nextInt(1_000_000)
+                "%0" + CODE_LENGTH + "d",
+                secureRandom.nextInt(CODE_BOUND)
         );
 
-        EmailVerification verification =
-                new EmailVerification(email, code, purpose);
+        LocalDateTime expiresAt =
+                LocalDateTime.now()
+                        .plusMinutes(EXPIRATION_MINUTES);
 
-        verificationRepository.save(verification);
+        EmailVerification verification =
+                repository.findByEmailAndPurpose(email, purpose)
+                        .orElseGet(() ->
+                                new EmailVerification(email, purpose)
+                        );
+
+        verification.issue(code, expiresAt);
+        repository.save(verification);
 
         return code;
     }
@@ -53,11 +55,7 @@ public class EmailVerificationService {
             VerificationPurpose purpose
     ) {
         EmailVerification verification =
-                verificationRepository
-                        .findTopByEmailAndPurposeOrderByCreatedAtDesc(
-                                email,
-                                purpose
-                        )
+                repository.findByEmailAndPurpose(email, purpose)
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
                                         "인증번호 발송 기록이 없습니다."
@@ -70,27 +68,22 @@ public class EmailVerificationService {
             );
         }
 
-        if (!verification.getVerificationCode().equals(code)) {
+        if (!verification.matches(code)) {
             throw new IllegalArgumentException(
                     "인증번호가 올바르지 않습니다."
             );
         }
 
-        verification.verify();
+        verification.completeVerification();
     }
 
-    @Transactional(readOnly = true)
     public boolean isVerified(
             String email,
             VerificationPurpose purpose
     ) {
-        return verificationRepository
-                .findTopByEmailAndPurposeOrderByCreatedAtDesc(
-                        email,
-                        purpose
-                )
-                .filter(verification -> !verification.isExpired())
+        return repository.findByEmailAndPurpose(email, purpose)
                 .filter(EmailVerification::isVerified)
+                .filter(verification -> !verification.isExpired())
                 .isPresent();
     }
 
@@ -99,20 +92,7 @@ public class EmailVerificationService {
             String email,
             VerificationPurpose purpose
     ) {
-        EmailVerification verification =
-                verificationRepository
-                        .findTopByEmailAndPurposeOrderByCreatedAtDesc(
-                                email,
-                                purpose
-                        )
-                        .filter(savedVerification -> !savedVerification.isExpired())
-                        .filter(EmailVerification::isVerified)
-                        .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "완료된 인증 정보가 없습니다."
-                                )
-                        );
-
-        verificationRepository.delete(verification);
+        repository.findByEmailAndPurpose(email, purpose)
+                .ifPresent(repository::delete);
     }
 }

@@ -49,8 +49,36 @@ public class EmailVerification {
         this.createdAt = LocalDateTime.now();
     }
 
+    public EmailVerification(
+            String email,
+            VerificationPurpose purpose
+    ) {
+        this.email = email;
+        this.purpose = purpose;
+        this.verified = false;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public void issue(
+            String verificationCode,
+            LocalDateTime expiresAt
+    ) {
+        this.verificationCode = verificationCode;
+        this.expiresAt = expiresAt;
+        this.verified = false;
+    }
+
     public void verify() {
         this.verified = true;
+    }
+
+    public void completeVerification() {
+        this.verified = true;
+    }
+
+    public boolean matches(String code) {
+        return verificationCode != null
+                && verificationCode.equals(code);
     }
 
     public boolean isExpired() {

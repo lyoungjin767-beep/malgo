@@ -34,17 +34,27 @@ class AuthControllerTests {
 
     private AuthService authService;
     private EmailVerificationService emailVerificationService;
+    private MailService mailService;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         authService = org.mockito.Mockito.mock(AuthService.class);
         emailVerificationService = org.mockito.Mockito.mock(EmailVerificationService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(authService, emailVerificationService)).build();
+        mailService = org.mockito.Mockito.mock(MailService.class);
+        mockMvc = MockMvcBuilders.standaloneSetup(
+                new AuthController(authService, emailVerificationService, mailService)
+        ).build();
     }
 
     @Test
     void sendsSignupEmailCode() throws Exception {
+        org.mockito.Mockito.when(emailVerificationService.createVerificationCode(
+                        "signup@example.com",
+                        VerificationPurpose.SIGNUP
+                ))
+                .thenReturn("123456");
+
         mockMvc.perform(post("/api/v1/auth/email/send")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -56,7 +66,9 @@ class AuthControllerTests {
                 .andExpect(jsonPath("$.message").value("인증번호를 전송했습니다."));
 
         org.mockito.Mockito.verify(emailVerificationService)
-                .sendCode("signup@example.com", VerificationPurpose.SIGNUP);
+                .createVerificationCode("signup@example.com", VerificationPurpose.SIGNUP);
+        org.mockito.Mockito.verify(mailService)
+                .sendVerificationCode("signup@example.com", "123456");
     }
 
     @Test
@@ -191,14 +203,13 @@ class AuthControllerTests {
     void emailVerificationServiceChecksLatestVerifiedEmail() {
         EmailVerificationRepository verificationRepository =
                 org.mockito.Mockito.mock(EmailVerificationRepository.class);
-        MailService mailService = org.mockito.Mockito.mock(MailService.class);
         EmailVerificationService emailVerificationService =
-                new EmailVerificationService(verificationRepository, mailService);
+                new EmailVerificationService(verificationRepository);
         EmailVerification verification =
                 new EmailVerification("verify@example.com", "123456", VerificationPurpose.SIGNUP);
-        verification.verify();
+        verification.completeVerification();
 
-        org.mockito.Mockito.when(verificationRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(
+        org.mockito.Mockito.when(verificationRepository.findByEmailAndPurpose(
                         "verify@example.com",
                         VerificationPurpose.SIGNUP
                 ))
@@ -211,13 +222,12 @@ class AuthControllerTests {
     void emailVerificationServiceVerifiesCode() {
         EmailVerificationRepository verificationRepository =
                 org.mockito.Mockito.mock(EmailVerificationRepository.class);
-        MailService mailService = org.mockito.Mockito.mock(MailService.class);
         EmailVerificationService emailVerificationService =
-                new EmailVerificationService(verificationRepository, mailService);
+                new EmailVerificationService(verificationRepository);
         EmailVerification verification =
                 new EmailVerification("verify@example.com", "123456", VerificationPurpose.SIGNUP);
 
-        org.mockito.Mockito.when(verificationRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(
+        org.mockito.Mockito.when(verificationRepository.findByEmailAndPurpose(
                         "verify@example.com",
                         VerificationPurpose.SIGNUP
                 ))
