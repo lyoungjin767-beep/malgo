@@ -1,4 +1,4 @@
-package com.malgo.backend.auth;
+package com.example.backend.member.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

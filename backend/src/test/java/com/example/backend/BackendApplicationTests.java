@@ -1,4 +1,4 @@
-package com.malgo.backend;
+package com.example.backend;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

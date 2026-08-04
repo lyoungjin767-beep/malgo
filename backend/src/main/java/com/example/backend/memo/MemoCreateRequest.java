@@ -1,4 +1,4 @@
-package com.malgo.backend.memo;
+package com.example.backend.memo;
 
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Size;
@@ -15,7 +15,7 @@ public record MemoCreateRequest(
         String memo
 ) {
 
-    @AssertTrue(message = "content 또는 memo 값은 필수입니다.")
+    @AssertTrue(message = "content or memo is required.")
     public boolean hasMemoText() {
         return StringUtils.hasText(content) || StringUtils.hasText(memo);
     }

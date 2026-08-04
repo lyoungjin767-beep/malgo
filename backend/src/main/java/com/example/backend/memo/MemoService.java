@@ -1,4 +1,4 @@
-package com.malgo.backend.memo;
+package com.example.backend.memo;
 
 import java.util.List;
 import org.springframework.data.domain.Sort;

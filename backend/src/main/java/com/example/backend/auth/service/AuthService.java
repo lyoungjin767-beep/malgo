@@ -1,5 +1,10 @@
-package com.malgo.backend.auth;
+package com.example.backend.auth.service;
 
+import com.example.backend.auth.dto.AuthResponse;
+import com.example.backend.auth.dto.LoginRequest;
+import com.example.backend.auth.dto.SignUpRequest;
+import com.example.backend.member.entity.Member;
+import com.example.backend.member.repository.MemberRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

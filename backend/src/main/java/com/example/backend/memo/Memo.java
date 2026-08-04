@@ -1,4 +1,4 @@
-package com.malgo.backend.memo;
+package com.example.backend.memo;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

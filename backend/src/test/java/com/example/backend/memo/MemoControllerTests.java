@@ -1,4 +1,4 @@
-package com.malgo.backend.memo;
+package com.example.backend.memo;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;

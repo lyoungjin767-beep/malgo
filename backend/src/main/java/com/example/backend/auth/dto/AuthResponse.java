@@ -1,4 +1,6 @@
-package com.malgo.backend.auth;
+package com.example.backend.auth.dto;
+
+import com.example.backend.member.entity.Member;
 
 public record AuthResponse(
         Long id,

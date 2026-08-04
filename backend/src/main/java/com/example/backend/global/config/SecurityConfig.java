@@ -1,4 +1,4 @@
-package com.malgo.backend.auth;
+package com.example.backend.global.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
