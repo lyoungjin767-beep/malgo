@@ -37,7 +37,7 @@ class AuthControllerTests {
         org.mockito.Mockito.when(authService.signup(org.mockito.ArgumentMatchers.any(SignupRequest.class)))
                 .thenReturn(1L);
 
-        mockMvc.perform(post("/api/auth/signup")
+        mockMvc.perform(post("/api/v1/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -47,7 +47,8 @@ class AuthControllerTests {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$").value(1));
+                .andExpect(jsonPath("$.message").value("회원가입에 성공했습니다."))
+                .andExpect(jsonPath("$.memberId").value(1));
     }
 
     @Test
@@ -55,7 +56,7 @@ class AuthControllerTests {
         org.mockito.Mockito.when(authService.login(org.mockito.ArgumentMatchers.any(LoginRequest.class)))
                 .thenReturn(1L);
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -64,7 +65,8 @@ class AuthControllerTests {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").value(1));
+                .andExpect(jsonPath("$.message").value("로그인에 성공했습니다."))
+                .andExpect(jsonPath("$.memberId").value(1));
     }
 
     @Test
