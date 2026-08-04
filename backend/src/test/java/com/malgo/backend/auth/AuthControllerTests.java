@@ -21,6 +21,7 @@ import com.malgo.backend.auth.service.MailService;
 import com.malgo.backend.auth.service.PasswordResetService;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -206,7 +207,8 @@ class AuthControllerTests {
         EmailVerificationService emailVerificationService =
                 new EmailVerificationService(verificationRepository);
         EmailVerification verification =
-                new EmailVerification("verify@example.com", "123456", VerificationPurpose.SIGNUP);
+                new EmailVerification("verify@example.com", VerificationPurpose.SIGNUP);
+        verification.issue("123456", LocalDateTime.now().plusMinutes(3));
         verification.completeVerification();
 
         org.mockito.Mockito.when(verificationRepository.findByEmailAndPurpose(
@@ -225,7 +227,8 @@ class AuthControllerTests {
         EmailVerificationService emailVerificationService =
                 new EmailVerificationService(verificationRepository);
         EmailVerification verification =
-                new EmailVerification("verify@example.com", "123456", VerificationPurpose.SIGNUP);
+                new EmailVerification("verify@example.com", VerificationPurpose.SIGNUP);
+        verification.issue("123456", LocalDateTime.now().plusMinutes(3));
 
         org.mockito.Mockito.when(verificationRepository.findByEmailAndPurpose(
                         "verify@example.com",
