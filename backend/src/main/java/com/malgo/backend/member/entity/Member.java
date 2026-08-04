@@ -24,7 +24,7 @@ public class Member {
     private String password;
 
     @Column(nullable = false, length = 30)
-    private String nickname;
+    private String name;
 
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified;
@@ -32,10 +32,10 @@ public class Member {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    public Member(String email, String password, String nickname) {
+    public Member(String email, String password, String name) {
         this.email = email;
         this.password = password;
-        this.nickname = nickname;
+        this.name = name;
         this.emailVerified = true;
         this.createdAt = LocalDateTime.now();
     }
