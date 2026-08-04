@@ -1,10 +1,10 @@
 package com.malgo.backend.auth.controller;
 
-import com.malgo.backend.auth.dto.AuthResponse;
 import com.malgo.backend.auth.dto.LoginRequest;
-import com.malgo.backend.auth.dto.SignUpRequest;
+import com.malgo.backend.auth.dto.SignupRequest;
 import com.malgo.backend.auth.service.AuthService;
 import jakarta.validation.Valid;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,12 +23,12 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> signUp(@Valid @RequestBody SignUpRequest request) {
+    public ResponseEntity<Map<String, Object>> signUp(@Valid @RequestBody SignupRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.signUp(request));
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@Valid @RequestBody LoginRequest request) {
+    public Map<String, Object> login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 }

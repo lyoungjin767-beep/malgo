@@ -7,12 +7,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.malgo.backend.auth.controller.AuthController;
-import com.malgo.backend.auth.dto.AuthResponse;
 import com.malgo.backend.auth.dto.LoginRequest;
-import com.malgo.backend.auth.dto.SignUpRequest;
+import com.malgo.backend.auth.dto.SignupRequest;
 import com.malgo.backend.auth.service.AuthService;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,8 +36,8 @@ class AuthControllerTests {
 
     @Test
     void signsUpMember() throws Exception {
-        org.mockito.Mockito.when(authService.signUp(org.mockito.ArgumentMatchers.any(SignUpRequest.class)))
-                .thenReturn(new AuthResponse(1L, "signup@example.com", "signup-user"));
+        org.mockito.Mockito.when(authService.signUp(org.mockito.ArgumentMatchers.any(SignupRequest.class)))
+                .thenReturn(Map.of("id", 1L, "email", "signup@example.com", "nickname", "signup-user"));
 
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -57,8 +57,8 @@ class AuthControllerTests {
 
     @Test
     void rejectsDuplicateEmail() throws Exception {
-        org.mockito.Mockito.when(authService.signUp(org.mockito.ArgumentMatchers.any(SignUpRequest.class)))
-                .thenReturn(new AuthResponse(1L, "duplicate@example.com", "duplicate-user"))
+        org.mockito.Mockito.when(authService.signUp(org.mockito.ArgumentMatchers.any(SignupRequest.class)))
+                .thenReturn(Map.of("id", 1L, "email", "duplicate@example.com", "nickname", "duplicate-user"))
                 .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT));
 
         String payload = """
@@ -82,10 +82,10 @@ class AuthControllerTests {
 
     @Test
     void logsInMember() throws Exception {
-        org.mockito.Mockito.when(authService.signUp(org.mockito.ArgumentMatchers.any(SignUpRequest.class)))
-                .thenReturn(new AuthResponse(1L, "login@example.com", "login-user"));
+        org.mockito.Mockito.when(authService.signUp(org.mockito.ArgumentMatchers.any(SignupRequest.class)))
+                .thenReturn(Map.of("id", 1L, "email", "login@example.com", "nickname", "login-user"));
         org.mockito.Mockito.when(authService.login(org.mockito.ArgumentMatchers.any(LoginRequest.class)))
-                .thenReturn(new AuthResponse(1L, "login@example.com", "login-user"));
+                .thenReturn(Map.of("id", 1L, "email", "login@example.com", "nickname", "login-user"));
 
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -136,7 +136,7 @@ class AuthControllerTests {
         org.mockito.Mockito.when(memberRepository.save(org.mockito.ArgumentMatchers.any(Member.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.signUp(new SignUpRequest("hash@example.com", "password123", "hash-user"));
+        service.signUp(new SignupRequest("hash@example.com", "password123", "hash-user"));
 
         org.mockito.ArgumentCaptor<Member> captor = org.mockito.ArgumentCaptor.forClass(Member.class);
         org.mockito.Mockito.verify(memberRepository).save(captor.capture());
@@ -154,7 +154,7 @@ class AuthControllerTests {
 
         ResponseStatusException exception = Assertions.assertThrows(
                 ResponseStatusException.class,
-                () -> service.signUp(new SignUpRequest("duplicate@example.com", "password123", "duplicate-user"))
+                () -> service.signUp(new SignupRequest("duplicate@example.com", "password123", "duplicate-user"))
         );
 
         assertThat(exception.getStatusCode().value()).isEqualTo(409);
@@ -169,9 +169,9 @@ class AuthControllerTests {
 
         org.mockito.Mockito.when(memberRepository.findByEmail("login@example.com")).thenReturn(Optional.of(member));
 
-        AuthResponse response = service.login(new LoginRequest("login@example.com", "password123"));
+        Map<String, Object> response = service.login(new LoginRequest("login@example.com", "password123"));
 
-        assertThat(response.email()).isEqualTo("login@example.com");
-        assertThat(response.nickname()).isEqualTo("login-user");
+        assertThat(response.get("email")).isEqualTo("login@example.com");
+        assertThat(response.get("nickname")).isEqualTo("login-user");
     }
 }

@@ -26,7 +26,7 @@ public class Member {
     @Column(nullable = false, length = 30)
     private String nickname;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     public Member(String email, String password, String nickname) {
