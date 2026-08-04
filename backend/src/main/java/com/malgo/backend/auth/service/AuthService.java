@@ -40,7 +40,7 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> login(LoginRequest request) {
-        String email = request.normalizedEmail();
+        String email = request.email().trim().toLowerCase();
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password."));
 
