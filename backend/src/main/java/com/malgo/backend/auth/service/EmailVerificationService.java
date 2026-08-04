@@ -1,5 +1,6 @@
 package com.malgo.backend.auth.service;
 
+import com.malgo.backend.auth.entity.VerificationPurpose;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;

@@ -2,6 +2,7 @@ package com.malgo.backend.auth.service;
 
 import com.malgo.backend.auth.dto.LoginRequest;
 import com.malgo.backend.auth.dto.SignupRequest;
+import com.malgo.backend.auth.entity.VerificationPurpose;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;

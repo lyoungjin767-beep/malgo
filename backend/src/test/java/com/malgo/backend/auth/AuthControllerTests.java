@@ -9,9 +9,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.malgo.backend.auth.controller.AuthController;
 import com.malgo.backend.auth.dto.LoginRequest;
 import com.malgo.backend.auth.dto.SignupRequest;
+import com.malgo.backend.auth.entity.VerificationPurpose;
 import com.malgo.backend.auth.service.AuthService;
 import com.malgo.backend.auth.service.EmailVerificationService;
-import com.malgo.backend.auth.service.VerificationPurpose;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
 import java.util.Optional;

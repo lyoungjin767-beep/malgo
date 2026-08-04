@@ -1,4 +1,4 @@
-package com.malgo.backend.auth.service;
+package com.malgo.backend.auth.entity;
 
 public enum VerificationPurpose {
     SIGNUP
