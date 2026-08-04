@@ -146,6 +146,17 @@ class AuthControllerTests {
     }
 
     @Test
+    void emailVerificationServiceStoresVerifiedEmail() {
+        EmailVerificationService emailVerificationService = new EmailVerificationService();
+
+        assertThat(emailVerificationService.isVerified("verify@example.com", VerificationPurpose.SIGNUP)).isFalse();
+
+        emailVerificationService.markVerified("verify@example.com", VerificationPurpose.SIGNUP);
+
+        assertThat(emailVerificationService.isVerified("VERIFY@example.com", VerificationPurpose.SIGNUP)).isTrue();
+    }
+
+    @Test
     void logsInMemberInService() {
         MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
         EmailVerificationService emailVerificationService = org.mockito.Mockito.mock(EmailVerificationService.class);
