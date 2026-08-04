@@ -10,6 +10,8 @@ import com.malgo.backend.auth.controller.AuthController;
 import com.malgo.backend.auth.dto.LoginRequest;
 import com.malgo.backend.auth.dto.SignupRequest;
 import com.malgo.backend.auth.service.AuthService;
+import com.malgo.backend.auth.service.EmailVerificationService;
+import com.malgo.backend.auth.service.VerificationPurpose;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
 import java.util.Optional;
@@ -73,10 +75,13 @@ class AuthControllerTests {
     @Test
     void storesHashedPassword() {
         MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
+        EmailVerificationService emailVerificationService = org.mockito.Mockito.mock(EmailVerificationService.class);
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        AuthService service = new AuthService(memberRepository, passwordEncoder);
+        AuthService service = new AuthService(memberRepository, passwordEncoder, emailVerificationService);
 
         org.mockito.Mockito.when(memberRepository.existsByEmail("hash@example.com")).thenReturn(false);
+        org.mockito.Mockito.when(emailVerificationService.isVerified("hash@example.com", VerificationPurpose.SIGNUP))
+                .thenReturn(true);
         org.mockito.Mockito.when(memberRepository.save(org.mockito.ArgumentMatchers.any(Member.class)))
                 .thenAnswer(invocation -> {
                     Member member = invocation.getArgument(0);
@@ -98,7 +103,8 @@ class AuthControllerTests {
     @Test
     void rejectsDuplicateEmailInService() {
         MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
-        AuthService service = new AuthService(memberRepository, new BCryptPasswordEncoder());
+        EmailVerificationService emailVerificationService = org.mockito.Mockito.mock(EmailVerificationService.class);
+        AuthService service = new AuthService(memberRepository, new BCryptPasswordEncoder(), emailVerificationService);
 
         org.mockito.Mockito.when(memberRepository.existsByEmail("duplicate@example.com")).thenReturn(true);
 
@@ -108,10 +114,43 @@ class AuthControllerTests {
     }
 
     @Test
+    void rejectsPasswordConfirmMismatchInService() {
+        MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
+        EmailVerificationService emailVerificationService = org.mockito.Mockito.mock(EmailVerificationService.class);
+        AuthService service = new AuthService(memberRepository, new BCryptPasswordEncoder(), emailVerificationService);
+
+        assertThatThrownBy(() ->
+                service.signup(new SignupRequest("mismatch-user", "mismatch@example.com", "password123", "different123"))
+        ).isInstanceOf(IllegalArgumentException.class);
+
+        org.mockito.Mockito.verifyNoInteractions(memberRepository);
+        org.mockito.Mockito.verifyNoInteractions(emailVerificationService);
+    }
+
+    @Test
+    void rejectsUnverifiedEmailInService() {
+        MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
+        EmailVerificationService emailVerificationService = org.mockito.Mockito.mock(EmailVerificationService.class);
+        AuthService service = new AuthService(memberRepository, new BCryptPasswordEncoder(), emailVerificationService);
+
+        org.mockito.Mockito.when(memberRepository.existsByEmail("unverified@example.com")).thenReturn(false);
+        org.mockito.Mockito.when(emailVerificationService.isVerified("unverified@example.com", VerificationPurpose.SIGNUP))
+                .thenReturn(false);
+
+        assertThatThrownBy(() ->
+                service.signup(new SignupRequest("unverified-user", "unverified@example.com", "password123", "password123"))
+        ).isInstanceOf(IllegalArgumentException.class);
+
+        org.mockito.Mockito.verify(memberRepository, org.mockito.Mockito.never())
+                .save(org.mockito.ArgumentMatchers.any(Member.class));
+    }
+
+    @Test
     void logsInMemberInService() {
         MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
+        EmailVerificationService emailVerificationService = org.mockito.Mockito.mock(EmailVerificationService.class);
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        AuthService service = new AuthService(memberRepository, passwordEncoder);
+        AuthService service = new AuthService(memberRepository, passwordEncoder, emailVerificationService);
         Member member = new Member("login@example.com", passwordEncoder.encode("password123"), "login-user");
         ReflectionTestUtils.setField(member, "id", 1L);
 
@@ -125,8 +164,9 @@ class AuthControllerTests {
     @Test
     void rejectsInvalidPasswordInService() {
         MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
+        EmailVerificationService emailVerificationService = org.mockito.Mockito.mock(EmailVerificationService.class);
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        AuthService service = new AuthService(memberRepository, passwordEncoder);
+        AuthService service = new AuthService(memberRepository, passwordEncoder, emailVerificationService);
         Member member = new Member("login@example.com", passwordEncoder.encode("password123"), "login-user");
 
         org.mockito.Mockito.when(memberRepository.findByEmail("login@example.com")).thenReturn(Optional.of(member));

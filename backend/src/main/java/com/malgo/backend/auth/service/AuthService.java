@@ -16,13 +16,32 @@ public class AuthService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationService emailVerificationService;
 
     @Transactional
     public Long signup(SignupRequest request) {
 
+        if (!request.password().equals(request.passwordConfirm())) {
+            throw new IllegalArgumentException(
+                    "비밀번호와 비밀번호 확인이 일치하지 않습니다."
+            );
+        }
+
         if (memberRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException(
                     "이미 가입된 이메일입니다."
+            );
+        }
+
+        boolean verified =
+                emailVerificationService.isVerified(
+                        request.email(),
+                        VerificationPurpose.SIGNUP
+                );
+
+        if (!verified) {
+            throw new IllegalArgumentException(
+                    "이메일 인증을 먼저 완료해주세요."
             );
         }
 
@@ -35,9 +54,7 @@ public class AuthService {
                 request.name()
         );
 
-        Member savedMember = memberRepository.save(member);
-
-        return savedMember.getId();
+        return memberRepository.save(member).getId();
     }
 
     public Long login(LoginRequest request) {
