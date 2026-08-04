@@ -165,7 +165,7 @@ class AuthControllerTests {
         MemberRepository memberRepository = org.mockito.Mockito.mock(MemberRepository.class);
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         AuthService service = new AuthService(memberRepository, passwordEncoder);
-        Member member = Member.create("login@example.com", passwordEncoder.encode("password123"), "login-user");
+        Member member = new Member("login@example.com", passwordEncoder.encode("password123"), "login-user");
 
         org.mockito.Mockito.when(memberRepository.findByEmail("login@example.com")).thenReturn(Optional.of(member));
 

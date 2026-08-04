@@ -29,7 +29,7 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered.");
         }
 
-        Member member = Member.create(
+        Member member = new Member(
                 email,
                 passwordEncoder.encode(request.password()),
                 request.normalizedNickname()
