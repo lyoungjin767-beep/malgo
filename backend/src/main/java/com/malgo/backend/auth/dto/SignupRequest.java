@@ -5,24 +5,24 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record SignupRequest(
-        @NotBlank
-        @Email
+
+        @NotBlank(message = "이메일은 필수입니다.")
+        @Email(message = "이메일 형식이 올바르지 않습니다.")
         String email,
 
-        @NotBlank
-        @Size(min = 8, max = 72)
+        @NotBlank(message = "비밀번호는 필수입니다.")
+        @Size(
+                min = 8,
+                max = 100,
+                message = "비밀번호는 8자 이상이어야 합니다."
+        )
         String password,
 
-        @NotBlank
-        @Size(max = 50)
+        @NotBlank(message = "닉네임은 필수입니다.")
+        @Size(
+                max = 30,
+                message = "닉네임은 30자 이하여야 합니다."
+        )
         String nickname
 ) {
-
-    public String normalizedEmail() {
-        return email.trim().toLowerCase();
-    }
-
-    public String normalizedNickname() {
-        return nickname.trim();
-    }
 }

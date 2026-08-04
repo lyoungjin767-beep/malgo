@@ -25,7 +25,7 @@ public class AuthService {
 
     @Transactional
     public Map<String, Object> signUp(SignupRequest request) {
-        String email = request.normalizedEmail();
+        String email = request.email().trim().toLowerCase();
         if (memberRepository.existsByEmail(email)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered.");
         }
@@ -33,7 +33,7 @@ public class AuthService {
         Member member = new Member(
                 email,
                 passwordEncoder.encode(request.password()),
-                request.normalizedNickname()
+                request.nickname().trim()
         );
         return toResponse(memberRepository.save(member));
     }
