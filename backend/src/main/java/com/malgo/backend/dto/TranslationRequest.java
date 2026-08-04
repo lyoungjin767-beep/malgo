@@ -1,4 +1,4 @@
-package com.example.project.dto;
+package com.malgo.backend.dto;
 
 import jakarta.validation.constraints.NotBlank;
 

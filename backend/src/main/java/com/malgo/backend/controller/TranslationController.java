@@ -1,8 +1,8 @@
-package com.example.project.controller;
+package com.malgo.backend.controller;
 
-import com.example.project.dto.TranslationRequest;
-import com.example.project.dto.TranslationResponse;
-import com.example.project.service.TranslationService;
+import com.malgo.backend.dto.TranslationRequest;
+import com.malgo.backend.dto.TranslationResponse;
+import com.malgo.backend.service.TranslationService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,4 +1,4 @@
-package com.example.project.dto;
+package com.malgo.backend.dto;
 
 // 분위기 점수 dto
 public record ToneScores(

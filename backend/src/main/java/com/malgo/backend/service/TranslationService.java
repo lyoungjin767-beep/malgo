@@ -1,9 +1,9 @@
-package com.example.project.service;
+package com.malgo.backend.service;
 
-import com.example.project.dto.CultureWarningResponse;
-import com.example.project.dto.ToneScores;
-import com.example.project.dto.TranslationRequest;
-import com.example.project.dto.TranslationResponse;
+import com.malgo.backend.dto.CultureWarningResponse;
+import com.malgo.backend.dto.ToneScores;
+import com.malgo.backend.dto.TranslationRequest;
+import com.malgo.backend.dto.TranslationResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

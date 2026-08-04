@@ -1,4 +1,4 @@
-package com.example.project.dto;
+package com.malgo.backend.dto;
 
 // 위험 표현 응답 dto
 public record CultureWarningResponse(
