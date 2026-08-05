@@ -1,8 +1,7 @@
 package com.malgo.backend.service;
 
 import com.malgo.backend.ai.OpenAiClient;
-import com.malgo.backend.dto.TranslationRequest;
-import com.malgo.backend.dto.TranslationResponse;
+import com.malgo.backend.dto.*;
 import org.springframework.stereotype.Service;
 
 import com.malgo.backend.entity.Translation;
@@ -15,7 +14,6 @@ import com.malgo.backend.repository.CultureWarningRepository;
 
 import org.springframework.transaction.annotation.Transactional;
 
-import com.malgo.backend.dto.TranslationHistoryResponse;
 import java.util.List;
 
 @Service
@@ -131,5 +129,74 @@ public class TranslationService {
                         translation.getCreatedAt()
                 ))
                 .toList();
+    }
+
+    // 번역 기록 1건의 상세 정보를 조회
+    // 처리 순서
+    /**
+     * 1. 번역 요청 조회
+     * 2. 연결된 번역 결과 조회
+     * 3. 번역 결과에 연결된 문화적 경고 조회
+     * 4. 상세 응답 DTO로 변환해 반환
+     */
+
+    @Transactional(readOnly = true)
+    public TranslationDetailResponse getTranslationDetail(Long translationId) {
+
+        // 1. URL로 전달받은 ID에 해당하는 번역 요청을 찾는다.
+        Translation translation = translationRepository.findById(translationId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "번역 기록을 찾을 수 없습니다. id=" + translationId
+                        )
+                );
+
+        // 2. 번역 요청 ID와 연결된 AI 번역 결과를 찾는다.
+        TranslationResult result = translationResultRepository
+                .findByTranslationId(translationId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "번역 결과를 찾을 수 없습니다. translationId=" + translationId
+                        )
+                );
+
+        // 3. 말투 점수 컬럼을 ToneScores DTO로 변환한다.
+        ToneScores toneScores = new ToneScores(
+                result.getFriendlinessScore(),
+                result.getPolitenessScore(),
+                result.getDirectnessScore(),
+                result.getAggressionScore(),
+                result.getBurdenScore(),
+                result.getProfessionalismScore(),
+                result.getNaturalnessScore()
+        );
+
+        // 4. DB에 저장된 문화적 경고들을 응답 DTO 목록으로 변환한다.
+        List<CultureWarningResponse> warnings =
+                cultureWarningRepository.findByTranslationResultId(result.getId())
+                        .stream()
+                        .map(warning -> new CultureWarningResponse(
+                                warning.getExpression(),
+                                warning.getCategory(),
+                                warning.getRiskLevel(),
+                                warning.getReason(),
+                                warning.getAlternativeExpression(),
+                                warning.getStartIndex(),
+                                warning.getEndIndex()
+                        ))
+                        .toList();
+
+        // 5. 원문, 번역 결과, 점수, 경고를 하나의 상세 응답으로 반환한다.
+        return new TranslationDetailResponse(
+                translation.getId(),
+                translation.getOriginalText(),
+                result.getLiteralTranslation(),
+                result.getNaturalTranslation(),
+                result.getCulturalTranslation(),
+                result.getCulturalExplanation(),
+                result.getOverallRiskLevel(),
+                toneScores,
+                warnings
+        );
     }
 }

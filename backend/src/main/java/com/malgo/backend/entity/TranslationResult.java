@@ -91,4 +91,54 @@ public class TranslationResult {
     public Translation getTranslation() {
         return translation;
     }
+
+    // 상세 조회 DTO를 만들 때 사용하는 번역 결과 값들
+
+    public String getLiteralTranslation() {
+        return literalTranslation;
+    }
+
+    public String getNaturalTranslation() {
+        return naturalTranslation;
+    }
+
+    public String getCulturalTranslation() {
+        return culturalTranslation;
+    }
+
+    public String getCulturalExplanation() {
+        return culturalExplanation;
+    }
+
+    public String getOverallRiskLevel() {
+        return overallRiskLevel;
+    }
+
+    public Integer getFriendlinessScore() {
+        return friendlinessScore;
+    }
+
+    public Integer getPolitenessScore() {
+        return politenessScore;
+    }
+
+    public Integer getDirectnessScore() {
+        return directnessScore;
+    }
+
+    public Integer getAggressionScore() {
+        return aggressionScore;
+    }
+
+    public Integer getBurdenScore() {
+        return burdenScore;
+    }
+
+    public Integer getProfessionalismScore() {
+        return professionalismScore;
+    }
+
+    public Integer getNaturalnessScore() {
+        return naturalnessScore;
+    }
 }

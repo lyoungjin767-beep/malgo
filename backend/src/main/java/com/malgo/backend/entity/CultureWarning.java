@@ -69,4 +69,35 @@ public class CultureWarning {
     public Long getId() {
         return id;
     }
+
+    
+    // 문화적 경고 정보를 상세 응답 DTO로 변환할 때 사용
+
+    public String getExpression() {
+        return expression;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public String getRiskLevel() {
+        return riskLevel;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public String getAlternativeExpression() {
+        return alternativeExpression;
+    }
+
+    public Integer getStartIndex() {
+        return startIndex;
+    }
+
+    public Integer getEndIndex() {
+        return endIndex;
+    }
 }

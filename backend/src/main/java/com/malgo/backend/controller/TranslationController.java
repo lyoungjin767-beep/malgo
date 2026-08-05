@@ -1,5 +1,6 @@
 package com.malgo.backend.controller;
 
+import com.malgo.backend.dto.TranslationDetailResponse;
 import com.malgo.backend.dto.TranslationRequest;
 import com.malgo.backend.dto.TranslationResponse;
 import com.malgo.backend.service.TranslationService;
@@ -38,5 +39,19 @@ public class TranslationController {
                 translationService.getTranslationHistory();
 
         return ResponseEntity.ok(history);
+    }
+
+    // 번역 기록 상세 조회
+    // URL 예시 : GET /api/translations/1
+
+    @GetMapping("/{id}")
+    public ResponseEntity<TranslationDetailResponse> getTranslationDetail(
+            @PathVariable Long id
+    ) {
+
+        TranslationDetailResponse detail =
+                translationService.getTranslationDetail(id);
+
+        return ResponseEntity.ok(detail);
     }
 }
