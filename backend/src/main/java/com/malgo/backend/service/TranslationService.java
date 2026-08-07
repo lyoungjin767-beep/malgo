@@ -199,4 +199,43 @@ public class TranslationService {
                 warnings
         );
     }
+
+    // 번역 기록 1건을 삭제
+    // 삭제 순서
+    /** 1. 번역 요청이 존재하는지 확인
+     * 2. 연결된 번역 결과 조회
+     * 3. 결과에 연결된 문화적 경고 삭제
+     * 4. 번역 결과 삭제
+     * 5. 번역 요청 삭제
+     */
+    // 외래키 관계가 있기 때문에 자식 데이터를 먼저 삭제
+
+    @Transactional
+    public void deleteTranslation(Long translationId) {
+
+        // 1. 삭제할 번역 요청이 실제로 존재하는지 확인
+        Translation translation = translationRepository.findById(translationId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "삭제할 번역 기록을 찾을 수 없습니다. id=" + translationId
+                        )
+                );
+
+        // 2. 해당 번역 요청에 연결된 AI 결과가 있는지 확인
+        translationResultRepository.findByTranslationId(translationId)
+                .ifPresent(result -> {
+
+                    // 3. 번역 결과에 연결된 문화적 경고를 먼저 삭제
+                    List<CultureWarning> warnings =
+                            cultureWarningRepository.findByTranslationResultId(result.getId());
+
+                    cultureWarningRepository.deleteAll(warnings);
+
+                    // 4. 문화적 경고 삭제 후 번역 결과 삭제
+                    translationResultRepository.delete(result);
+                });
+
+        // 5. 마지막으로 번역 요청 삭제
+        translationRepository.delete(translation);
+    }
 }
