@@ -2,6 +2,7 @@ package com.malgo.backend.service;
 
 import com.malgo.backend.ai.OpenAiClient;
 import com.malgo.backend.dto.*;
+import com.malgo.backend.exception.TranslationNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.malgo.backend.entity.Translation;
@@ -146,9 +147,7 @@ public class TranslationService {
         // 1. URL로 전달받은 ID에 해당하는 번역 요청을 찾는다.
         Translation translation = translationRepository.findById(translationId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "번역 기록을 찾을 수 없습니다. id=" + translationId
-                        )
+                        new TranslationNotFoundException(translationId)
                 );
 
         // 2. 번역 요청 ID와 연결된 AI 번역 결과를 찾는다.
@@ -216,9 +215,7 @@ public class TranslationService {
         // 1. 삭제할 번역 요청이 실제로 존재하는지 확인
         Translation translation = translationRepository.findById(translationId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "삭제할 번역 기록을 찾을 수 없습니다. id=" + translationId
-                        )
+                    new TranslationNotFoundException(translationId)
                 );
 
         // 2. 해당 번역 요청에 연결된 AI 결과가 있는지 확인
