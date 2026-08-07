@@ -78,11 +78,78 @@ public class OpenAiClient {
             작성 규칙:
             - literalTranslation은 원문의 의미와 구조를 최대한 유지한다.
             - naturalTranslation은 현지인이 실제로 사용할 자연스러운 표현으로 작성한다.
-            - culturalTranslation은 대상 국가와 상황을 고려한 가장 안전한 표현으로 작성한다.
-            - culturalExplanation은 왜 표현을 변경했는지 한국어로 설명한다.
+            - culturalTranslation은 대상 국가, 관계, 상황을 고려한 가장 적절한 표현으로 작성한다.
+            - culturalExplanation과 warning의 reason은 반드시 sourceLanguage와 동일한 언어로 작성한다.
+            - sourceLanguage가 ko이면 설명과 reason은 반드시 한국어로 작성한다.
+            - sourceLanguage가 en이면 설명과 reason은 반드시 영어로 작성한다.
+            - sourceLanguage가 ja이면 설명과 reason은 반드시 일본어로 작성한다.
+            - targetLanguage는 번역 결과와 alternativeExpression에만 사용하며, 설명 언어를 결정하는 데 사용하지 않는다.
+            - culturalExplanation은 핵심적인 문화적 차이와 수정 이유만 2~4문장으로 간결하게 작성한다.
             - 모든 점수는 0부터 100까지의 정수로 작성한다.
-            - 위험 표현이 없다면 warnings는 빈 배열로 작성한다.
-            - 문화 차이는 개인과 상황에 따라 달라질 수 있으므로 단정적으로 설명하지 않는다.
+            
+            - warnings에는 실제로 오해, 무례함, 압박감, 공격성, 문화적 민감성 등의 문제가 발생할 가능성이 있는 표현만 포함한다.
+            - 단순히 표현이 모호하거나 더 구체적으로 쓸 수 있다는 이유만으로 CAUTION을 부여하지 않는다.
+            - 위험 표현이 없다면 warnings는 빈 배열로 반환한다.
+            - 동일한 원인에 대한 경고를 중복해서 생성하지 않는다.
+            
+            - warning의 expression은 반드시 originalText에 실제로 존재하는 문자열이어야 한다.
+            - startIndex는 originalText에서 expression이 시작되는 0-based 문자 위치이다.
+            - endIndex는 expression의 마지막 문자 다음 위치(exclusive)이다.
+            - 따라서 originalText.substring(startIndex, endIndex)의 결과가 expression과 정확히 일치해야 한다.
+            
+            - warning category는 다음 중 하나만 사용한다:
+              DIRECTNESS, POLITENESS, PRESSURE, FORMALITY,
+              PERSONAL_ATTACK, SARCASM, CULTURAL_TABOO,
+              AMBIGUITY, SENSITIVITY, OTHER
+              
+            - 상대방의 능력, 성격, 지능, 인격 등을 직접적으로 깎아내리는 표현은 PERSONAL_ATTACK으로 분류한다.
+            - 표면적인 의미와 실제 의도가 반대이거나, 칭찬 형태로 불만·조롱·비난을 전달하는 표현은 SARCASM으로 분류한다.
+            
+            - alternativeExpression은 targetLanguage로 작성한다.
+            - SAFE는 실질적인 문화적 또는 커뮤니케이션 위험이 없는 경우 사용한다.
+            - CAUTION은 상황이나 관계에 따라 부정적으로 받아들여질 가능성이 있는 경우 사용한다.
+            - HIGH는 오해, 무례함 또는 관계 악화 가능성이 높은 경우 사용한다.
+            - AVOID는 대상 문화나 상황에서 사용하지 않는 것이 강하게 권장되는 경우 사용한다.
+            - AVOID는 단순히 강하거나 무례한 표현이라는 이유만으로 사용하지 않는다.
+            - AVOID는 심각한 모욕, 차별, 혐오, 문화적 금기 등 대상 문화나 관계에서 그대로 사용하는 것을 강하게 피해야 하는 표현에 사용한다.
+            - 강한 압박, 최후통첩, 관계 악화 가능성이 높더라도 위 기준에 해당하지 않는다면 HIGH를 사용한다.
+            - PERSONAL_ATTACK의 alternativeExpression은 사람의 능력, 성격, 지능 또는 인격을 평가하지 않는다.
+            - 개인에 대한 비판은 가능한 경우 행동, 결과, 업무 품질 또는 구체적인 문제에 대한 표현으로 전환한다.
+            - 문화 차이는 개인과 상황에 따라 다를 수 있으므로 고정관념처럼 단정하지 않는다.
+            - culturalExplanation과 warning의 reason은 sourceLanguage 사용자가 이해할 수 있는 언어로 작성한다.
+            
+            - culturalTranslation과 alternativeExpression은 원문의 핵심 의도와 감정을 유지해야 한다.
+            - 문화적으로 부적절한 표현을 완화하더라도 사용자의 불만, 요청, 거절, 긴급성 등의 핵심 의도를 임의로 삭제하거나 반대 의미로 변경하지 않는다.
+            - 비꼼이나 반어 표현을 완화할 때는 숨겨진 실제 의도를 명확하고 건설적인 표현으로 변환한다.
+            
+            - 거절 표현을 문화적으로 조정할 때는 거절 의도를 명확히 유지한다.
+            - 원문에 대안이나 이유가 없는 경우 구체적인 이유나 대안을 임의로 만들어내지 않는다.
+            - 다만 관계를 유지하기 위한 중립적인 후속 표현은 필요할 경우 최소한으로 추가할 수 있다.
+            
+            - 원문에 존재하지 않는 구체적인 사실, 대상, 이유, 일정, 인물, 장소 등의 정보를 임의로 추측하거나 추가하지 않는다.
+            - 원문에서 대상이 모호한 경우에도 문맥 정보가 제공되지 않았다면 임의로 구체화하지 않는다.
+            - 예를 들어 "this"를 근거 없이 "document", "file", "資料" 등으로 바꾸지 않는다.
+            - culturalTranslation은 문화적으로 자연스럽게 조정하되 원문의 정보 범위를 유지한다.
+        
+            - toneScores는 culturalTranslation이나 수정된 문장이 아니라 originalText의 표현을 평가한다.
+            - 단, 단순한 언어적 특성이 아니라 입력된 situation, relationshipType, targetCountry를 고려하여 상대방이 originalText의 의도를 어떻게 받아들일 가능성이 있는지를 기준으로 평가한다.
+            
+            - overallRiskLevel은 문장 전체의 커뮤니케이션 위험도를 나타낸다.
+            - warnings가 하나 이상 존재하는 경우 overallRiskLevel은 원칙적으로 warnings 중 가장 높은 riskLevel보다 낮을 수 없다.
+            - 위험도 우선순위는 SAFE < CAUTION < HIGH < AVOID 순서이다.
+            
+            - 특정 단어나 표현이 포함되었다는 이유만으로 자동으로 warning을 생성하지 않는다.
+            - warning은 해당 표현이 현재의 문맥, 상황, 관계, 대상 국가에서 실제로 커뮤니케이션 위험을 만드는 경우에만 생성한다.
+            - 동일한 표현이라도 문맥에 따라 SAFE일 수 있음을 고려한다.
+            
+            - warning 판단은 표현 자체의 격식이나 직설성만으로 결정하지 않고 situation, relationshipType, requestedTone을 반드시 함께 고려한다.
+            - FRIEND + DAILY + CASUAL과 같이 친밀하고 비격식적인 상황에서는 일상적인 반말, 가벼운 농담, 웃음 표현, 친근한 호칭 등을 그 자체만으로 위험 표현으로 판단하지 않는다.
+            - targetLanguage에서 자연스럽게 표현만 바꾸면 해결되는 단순한 언어·문화 차이는 warning을 생성하지 않고 naturalTranslation 또는 culturalTranslation에서 자연스럽게 조정한다.
+            - warning은 실제로 상대방에게 오해, 불쾌감, 압박, 모욕, 관계 악화 등의 의미 있는 위험이 예상될 때만 생성한다.
+            - 사소하거나 가능성이 낮은 위험까지 과도하게 경고하지 않는다.
+            
+            - 원문에 이름이나 호칭이 없는 경우 [Name], [Client Name] 등의 placeholder도 임의로 추가하지 않는다.
+            
             """
                 .formatted(
                         request.originalText(),
@@ -139,7 +206,21 @@ public class OpenAiClient {
     private Map<String, Object> createResponseFormat() {
         Map<String, Object> warningProperties = Map.of(
                 "expression", Map.of("type", "string"),
-                "category", Map.of("type", "string"),
+                "category", Map.of(
+                        "type", "string",
+                        "enum", List.of(
+                                "DIRECTNESS",
+                                "POLITENESS",
+                                "PRESSURE",
+                                "FORMALITY",
+                                "PERSONAL_ATTACK",
+                                "SARCASM",
+                                "CULTURAL_TABOO",
+                                "AMBIGUITY",
+                                "SENSITIVITY",
+                                "OTHER"
+                        )
+                ),
                 "riskLevel", Map.of(
                         "type", "string",
                         "enum", List.of("SAFE", "CAUTION", "HIGH", "AVOID")
