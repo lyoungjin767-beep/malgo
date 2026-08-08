@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+
+  "name": "Malgo",
+  "version": "0.1.0",
+
+  "description": "의도와 맥락을 분석해 글로벌 커뮤니케이션의 오해를 줄여주는 AI 도우미",
+
+  "permissions": [
+    "storage"
+  ],
+
+  "host_permissions": [
+    "http://localhost:8080/*"
+  ],
+
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://mail.google.com/*",
+        "https://app.slack.com/*"
+      ],
+
+      "js": [
+        "content.js"
+      ],
+
+      "css": [
+        "content.css"
+      ],
+
+      "run_at": "document_idle"
+    }
+  ]
+}

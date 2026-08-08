@@ -1,0 +1,146 @@
+.malgo-popup {
+  position: fixed;
+
+  width: 360px;
+
+  box-sizing: border-box;
+
+  padding: 18px;
+
+  background: #ffffff;
+
+  border: 1px solid #e8e8e8;
+
+  border-radius: 16px;
+
+  box-shadow:
+    0 12px 35px
+    rgba(0, 0, 0, 0.18);
+
+  z-index: 2147483647;
+
+  font-family:
+    Arial,
+    "Noto Sans KR",
+    sans-serif;
+
+  color: #1f1f1f;
+}
+
+
+.malgo-header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content:
+    space-between;
+
+  margin-bottom: 12px;
+
+  font-size: 18px;
+
+  font-weight: 700;
+}
+
+
+.malgo-close {
+  border: 0;
+
+  background: transparent;
+
+  font-size: 22px;
+
+  cursor: pointer;
+
+  color: #777777;
+}
+
+
+.malgo-status {
+  padding: 9px 11px;
+
+  margin-bottom: 10px;
+
+  border-radius: 9px;
+
+  font-size: 14px;
+
+  font-weight: 700;
+}
+
+
+.malgo-risk {
+  background: #fff4e5;
+}
+
+
+.malgo-safe {
+  background: #f2f7f3;
+}
+
+
+.malgo-reason {
+  margin-bottom: 15px;
+
+  font-size: 14px;
+
+  line-height: 1.55;
+
+  color: #444444;
+}
+
+
+.malgo-section {
+  margin-top: 15px;
+}
+
+
+.malgo-label {
+  margin-bottom: 7px;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+
+.malgo-suggestion {
+  padding: 11px;
+
+  margin-bottom: 8px;
+
+  background: #f6f7f9;
+
+  border-radius: 9px;
+
+  font-size: 14px;
+
+  line-height: 1.55;
+}
+
+
+.malgo-apply {
+  width: 100%;
+
+  padding: 10px 12px;
+
+  border: 0;
+
+  border-radius: 9px;
+
+  background: #111111;
+
+  color: white;
+
+  font-size: 14px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+
+.malgo-apply:hover {
+  opacity: 0.85;
+}
