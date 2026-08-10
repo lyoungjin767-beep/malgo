@@ -68,4 +68,15 @@ public class ConversationController {
                 conversationService.summarizeConversation(id)
         );
     }
+
+    // 저장된 대화 요약 목록 조회
+    // GET /api/conversations/{id}/summaries
+    @GetMapping("/{id}/summaries")
+    public ResponseEntity<List<ConversationSummaryResponse>> getConversationSummaries(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                conversationService.getConversationSummaries(id)
+        );
+    }
 }

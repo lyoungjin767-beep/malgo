@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.malgo.backend.ai.OpenAiClient;
 import com.malgo.backend.dto.ConversationChatResponse;
 import com.malgo.backend.dto.ConversationSummaryResponse;
+import com.malgo.backend.entity.ConversationSummary;
+import com.malgo.backend.repository.ConversationSummaryRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,17 +31,20 @@ public class ConversationService {
     private final ConversationMessageRepository messageRepository;
     private final AiPartnerRepository aiPartnerRepository;
     private final OpenAiClient openAiClient;
+    private final ConversationSummaryRepository summaryRepository;
 
     public ConversationService(
             ConversationRepository conversationRepository,
             ConversationMessageRepository messageRepository,
             AiPartnerRepository aiPartnerRepository,
-            OpenAiClient openAiClient
+            OpenAiClient openAiClient,
+            ConversationSummaryRepository summaryRepository
     ) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
         this.aiPartnerRepository = aiPartnerRepository;
         this.openAiClient = openAiClient;
+        this.summaryRepository = summaryRepository;
     }
 
     // 선택한 AI 상대를 기준으로 새 대화방을 생성
@@ -163,7 +168,7 @@ public class ConversationService {
     }
 
     // 특정 대화방의 전체 메시지를 가져와 OpenAI를 이용해 대화 내용을 요약
-    @Transactional(readOnly = true)
+    @Transactional
     public ConversationSummaryResponse summarizeConversation(
             Long conversationId
     ) {
@@ -201,11 +206,47 @@ public class ConversationService {
         String summary =
                 openAiClient.summarizeConversation(conversationText);
 
-        // 5. 프론트에 요약 결과 반환
+        // 5. 생성된 요약을 DB에 저장
+        ConversationSummary conversationSummary =
+                new ConversationSummary(
+                        conversation,
+                        summary
+                );
+
+        ConversationSummary savedSummary =
+                summaryRepository.save(conversationSummary);
+
+        // 6. 저장된 요약 결과를 프론트에 반환
         return new ConversationSummaryResponse(
+                savedSummary.getId(),
                 conversationId,
-                summary
+                savedSummary.getSummary(),
+                savedSummary.getCreatedAt()
         );
+    }
+
+    // 특정 대화방에 저장된 요약 기록을 최신순으로 조회
+    @Transactional(readOnly = true)
+    public List<ConversationSummaryResponse> getConversationSummaries(
+            Long conversationId
+    ) {
+
+        if (!conversationRepository.existsById(conversationId)) {
+            throw new IllegalArgumentException(
+                    "대화방을 찾을 수 없습니다. id=" + conversationId
+            );
+        }
+
+        return summaryRepository
+                .findByConversationIdOrderByCreatedAtDesc(conversationId)
+                .stream()
+                .map(summary -> new ConversationSummaryResponse(
+                        summary.getId(),
+                        conversationId,
+                        summary.getSummary(),
+                        summary.getCreatedAt()
+                ))
+                .toList();
     }
 
 }
