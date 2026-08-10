@@ -15,8 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.malgo.backend.ai.OpenAiClient;
 import com.malgo.backend.dto.ConversationChatResponse;
+import com.malgo.backend.dto.ConversationSummaryResponse;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 // 대화방 생성과 메시지 저장/조회를 처리
 
@@ -159,4 +161,51 @@ public class ConversationService {
                 ))
                 .toList();
     }
+
+    // 특정 대화방의 전체 메시지를 가져와 OpenAI를 이용해 대화 내용을 요약
+    @Transactional(readOnly = true)
+    public ConversationSummaryResponse summarizeConversation(
+            Long conversationId
+    ) {
+
+        // 1. 대화방 존재 여부 확인
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "대화방을 찾을 수 없습니다. id=" + conversationId
+                        )
+                );
+
+        // 2. 해당 대화방의 메시지를 시간순으로 조회
+        List<ConversationMessage> messages =
+                messageRepository.findByConversationIdOrderByCreatedAtAsc(
+                        conversation.getId()
+                );
+
+        if (messages.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "요약할 대화 내용이 없습니다."
+            );
+        }
+
+        // 3. OpenAI에 전달할 대화 텍스트 생성
+        String conversationText = messages.stream()
+                .map(message ->
+                        message.getSenderType()
+                                + ": "
+                                + message.getContent()
+                )
+                .collect(Collectors.joining("\n"));
+
+        // 4. OpenAI로 대화 요약 생성
+        String summary =
+                openAiClient.summarizeConversation(conversationText);
+
+        // 5. 프론트에 요약 결과 반환
+        return new ConversationSummaryResponse(
+                conversationId,
+                summary
+        );
+    }
+
 }

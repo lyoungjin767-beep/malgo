@@ -121,6 +121,42 @@ public class OpenAiClient {
         return extractOutputText(response);
     }
 
+    // 대화방의 전체 메시지를 바탕으로 핵심 대화 내용을 간단하게 요약
+    public String summarizeConversation(String conversationText) {
+
+        String prompt = """
+            너는 Malgo의 대화 요약 도우미다.
+
+            아래 대화 내용을 읽고 사용자가 나중에 다시 확인하기 쉽도록
+            핵심 내용만 간결하게 요약하라.
+
+            대화 내용:
+            %s
+
+            요약 규칙:
+            - 대화의 핵심 상황과 목적을 중심으로 요약한다.
+            - 중요한 요청, 결정, 약속, 거절, 일정 등이 있다면 포함한다.
+            - 원문에 없는 사실을 임의로 추가하지 않는다.
+            - 중복되는 내용은 제거한다.
+            - 한국어로 자연스럽게 작성한다.
+            - 2~4문장 정도로 간결하게 작성한다.
+            """
+                .formatted(conversationText);
+
+        Map<String, Object> body = Map.of(
+                "model", model,
+                "input", prompt
+        );
+
+        Map<?, ?> response = restClient.post()
+                .uri("/responses")
+                .body(body)
+                .retrieve()
+                .body(Map.class);
+
+        return extractOutputText(response);
+    }
+
     private String buildPrompt(TranslationRequest request) {
         return """
             너는 문화적 맥락을 고려하는 글로벌 커뮤니케이션 전문가다.

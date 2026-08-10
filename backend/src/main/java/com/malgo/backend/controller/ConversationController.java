@@ -4,6 +4,7 @@ import com.malgo.backend.dto.*;
 import com.malgo.backend.service.ConversationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.malgo.backend.dto.ConversationSummaryResponse;
 
 import java.util.List;
 
@@ -54,6 +55,17 @@ public class ConversationController {
     ) {
         return ResponseEntity.ok(
                 conversationService.getMessages(id)
+        );
+    }
+
+    // 대화 내용 요약
+    // POST /api/conversations/{id}/summary
+    @PostMapping("/{id}/summary")
+    public ResponseEntity<ConversationSummaryResponse> summarizeConversation(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                conversationService.summarizeConversation(id)
         );
     }
 }
