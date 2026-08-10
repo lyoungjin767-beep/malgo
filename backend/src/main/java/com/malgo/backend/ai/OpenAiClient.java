@@ -60,6 +60,67 @@ public class OpenAiClient {
         }
     }
 
+    // 선택된 AI 상대의 정보와 사용자의 메시지를 바탕으로 대화용 AI 응답을 생성
+    public String chat(
+            String partnerName,
+            String targetCountry,
+            String relationshipType,
+            String speechStyle,
+            String characteristic,
+            String situation,
+            String userMessage
+    ) {
+
+        String prompt = """
+            너는 Malgo의 AI 글로벌 커뮤니케이션 도우미다.
+
+            사용자는 특정 상대방에게 어떻게 말하면 좋을지 질문하고 있다.
+            아래 상대방의 정보와 상황을 고려해서 사용자에게 자연스럽게 답변하라.
+
+            AI 상대 이름: %s
+            대상 국가: %s
+            사용자와 상대방의 관계: %s
+            상대방 말투/스타일: %s
+            상대방 특징: %s
+            현재 상황: %s
+
+            사용자 메시지:
+            %s
+
+            응답 규칙:
+            - 사용자가 어떤 표현을 어떻게 말하면 좋을지 묻는 경우 실제 사용할 수 있는 표현을 추천한다.
+            - 대상 국가와 관계를 고려한다.
+            - 사용자의 의도를 임의로 바꾸지 않는다.
+            - 원문에 없는 구체적인 사실을 만들어내지 않는다.
+            - 답변은 한국어로 설명한다.
+            - 필요하면 추천 번역 문장을 함께 제공한다.
+            - 너무 길게 설명하지 말고 실제 채팅처럼 자연스럽게 답한다.
+            """
+                .formatted(
+                        partnerName,
+                        targetCountry,
+                        relationshipType,
+                        speechStyle,
+                        characteristic == null ? "별도 정보 없음" : characteristic,
+                        situation,
+                        userMessage
+                );
+
+        Map<String, Object> body = Map.of(
+                "model", model,
+                "input", prompt
+        );
+
+        Map<?, ?> response = restClient.post()
+                .uri("/responses")
+                .body(body)
+                .retrieve()
+                .body(Map.class);
+
+        // 기존에 만들어둔 응답 텍스트 추출 메서드를 그대로 사용
+        return extractOutputText(response);
+    }
+
     private String buildPrompt(TranslationRequest request) {
         return """
             너는 문화적 맥락을 고려하는 글로벌 커뮤니케이션 전문가다.
