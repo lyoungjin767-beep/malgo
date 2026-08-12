@@ -1,15 +1,14 @@
 package com.malgo.backend.controller;
 
-import com.malgo.backend.dto.TranslationDetailResponse;
-import com.malgo.backend.dto.TranslationRequest;
-import com.malgo.backend.dto.TranslationResponse;
+import com.malgo.backend.dto.*;
 import com.malgo.backend.service.TranslationService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import com.malgo.backend.dto.TranslationStatisticsResponse;
 
-import com.malgo.backend.dto.TranslationHistoryResponse;
 import java.util.List;
 
 @RestController
@@ -68,5 +67,52 @@ public class TranslationController {
 
         // 삭제 성공 시 본문 없이 204 No Content 반환
         return ResponseEntity.noContent().build();
+    }
+
+    // 번역 기록 메모 저장 또는 수정
+    // PUT /api/translations/{id}/memo
+
+    @PutMapping("/{id}/memo")
+    public ResponseEntity<TranslationMemoResponse> saveOrUpdateMemo(
+            @PathVariable Long id,
+            @RequestBody TranslationMemoRequest request
+    ) {
+        return ResponseEntity.ok(
+                translationService.saveOrUpdateMemo(id, request)
+        );
+    }
+
+    // 번역 기록 메모 조회
+    // ET /api/translations/{id}/memo
+
+    @GetMapping("/{id}/memo")
+    public ResponseEntity<TranslationMemoResponse> getMemo(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                translationService.getMemo(id)
+        );
+    }
+
+    // 마이페이지 최근 번역 기록 조회
+    // GET /api/translations/recent
+    @GetMapping("/recent")
+    public ResponseEntity<List<MyPageTranslationResponse>>
+    getRecentTranslations() {
+
+        return ResponseEntity.ok(
+                translationService.getMyPageTranslations()
+        );
+    }
+
+    // 번역 상황별 사용 통계 조회
+    // GET /api/translations/statistics
+    @GetMapping("/statistics")
+    public ResponseEntity<TranslationStatisticsResponse>
+    getTranslationStatistics() {
+
+        return ResponseEntity.ok(
+                translationService.getTranslationStatistics()
+        );
     }
 }

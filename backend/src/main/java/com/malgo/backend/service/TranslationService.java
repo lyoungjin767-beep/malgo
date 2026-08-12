@@ -15,7 +15,16 @@ import com.malgo.backend.repository.CultureWarningRepository;
 
 import org.springframework.transaction.annotation.Transactional;
 
+import com.malgo.backend.dto.TranslationMemoRequest;
+import com.malgo.backend.dto.TranslationMemoResponse;
+import com.malgo.backend.entity.TranslationMemo;
+import com.malgo.backend.repository.TranslationMemoRepository;
+import com.malgo.backend.dto.MyPageTranslationResponse;
+import com.malgo.backend.dto.TranslationStatisticsResponse;
+
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class TranslationService {
@@ -24,17 +33,20 @@ public class TranslationService {
     private final TranslationResultRepository translationResultRepository;
     private final CultureWarningRepository cultureWarningRepository;
     private final OpenAiClient openAiClient;
+    private final TranslationMemoRepository translationMemoRepository;
 
     public TranslationService(
             TranslationRepository translationRepository,
             TranslationResultRepository translationResultRepository,
             CultureWarningRepository cultureWarningRepository,
-            OpenAiClient openAiClient
+            OpenAiClient openAiClient,
+            TranslationMemoRepository translationMemoRepository
     ) {
         this.translationRepository = translationRepository;
         this.translationResultRepository = translationResultRepository;
         this.cultureWarningRepository = cultureWarningRepository;
         this.openAiClient = openAiClient;
+        this.translationMemoRepository = translationMemoRepository;
     }
 
 
@@ -185,17 +197,30 @@ public class TranslationService {
                         ))
                         .toList();
 
+        // 번역 기록에 작성된 메모가 있다면 가져온다.
+        // 메모가 없으면 null을 반환한다.
+        String memo = translationMemoRepository
+                .findByTranslationId(translationId)
+                .map(TranslationMemo::getContent)
+                .orElse(null);
+
         // 5. 원문, 번역 결과, 점수, 경고를 하나의 상세 응답으로 반환한다.
         return new TranslationDetailResponse(
                 translation.getId(),
                 translation.getOriginalText(),
+
                 result.getLiteralTranslation(),
                 result.getNaturalTranslation(),
                 result.getCulturalTranslation(),
                 result.getCulturalExplanation(),
+
                 result.getOverallRiskLevel(),
+
                 toneScores,
-                warnings
+                warnings,
+
+                memo,
+                translation.getCreatedAt()
         );
     }
 
@@ -234,5 +259,155 @@ public class TranslationService {
 
         // 5. 마지막으로 번역 요청 삭제
         translationRepository.delete(translation);
+    }
+
+    // 번역 기록에 메모를 저장하거나 기존 메모를 수정
+    // 이미 메모가 있으면 수정하고, 없으면 새 메모를 생성
+    @Transactional
+    public TranslationMemoResponse saveOrUpdateMemo(
+            Long translationId,
+            TranslationMemoRequest request
+    ) {
+
+        // 1. 번역 기록 존재 여부 확인
+        Translation translation = translationRepository.findById(translationId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "번역 기록을 찾을 수 없습니다. id=" + translationId
+                        )
+                );
+
+        // 2. 기존 메모가 있는지 확인
+        TranslationMemo memo = translationMemoRepository
+                .findByTranslationId(translationId)
+                .orElseGet(() ->
+                        new TranslationMemo(
+                                translation,
+                                request.content()
+                        )
+                );
+
+        // 기존 메모가 있는 경우 내용 수정
+        if (memo.getId() != null) {
+            memo.updateContent(request.content());
+        }
+
+        // 3. 메모 저장
+        TranslationMemo savedMemo =
+                translationMemoRepository.save(memo);
+
+        // 4. 응답 DTO 반환
+        return new TranslationMemoResponse(
+                savedMemo.getId(),
+                translationId,
+                savedMemo.getContent(),
+                savedMemo.getCreatedAt(),
+                savedMemo.getUpdatedAt()
+        );
+    }
+
+
+    // 특정 번역 기록에 저장된 메모를 조회
+    @Transactional(readOnly = true)
+    public TranslationMemoResponse getMemo(Long translationId) {
+
+        // 번역 기록 자체가 존재하는지 확인
+        if (!translationRepository.existsById(translationId)) {
+            throw new IllegalArgumentException(
+                    "번역 기록을 찾을 수 없습니다. id=" + translationId
+            );
+        }
+
+        TranslationMemo memo = translationMemoRepository
+                .findByTranslationId(translationId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "저장된 메모가 없습니다."
+                        )
+                );
+
+        return new TranslationMemoResponse(
+                memo.getId(),
+                translationId,
+                memo.getContent(),
+                memo.getCreatedAt(),
+                memo.getUpdatedAt()
+        );
+    }
+
+    // 마이페이지에 표시할 최근 번역 기록을 조회한다.
+    // 원문, 추천 번역, 번역 날짜, 메모 존재 여부를 함께 반환
+    @Transactional(readOnly = true)
+    public List<MyPageTranslationResponse> getMyPageTranslations() {
+
+        return translationRepository.findAll()
+                .stream()
+
+                // 최신 번역이 위에 나오도록 정렬
+                .sorted((a, b) ->
+                        b.getCreatedAt().compareTo(a.getCreatedAt())
+                )
+
+                .map(translation -> {
+
+                    // 해당 번역의 AI 분석 결과 조회
+                    TranslationResult result =
+                            translationResultRepository
+                                    .findByTranslationId(translation.getId())
+                                    .orElse(null);
+
+                    // 결과가 없는 번역 기록은 제외
+                    if (result == null) {
+                        return null;
+                    }
+
+                    // 메모 존재 여부 확인
+                    boolean hasMemo =
+                            translationMemoRepository
+                                    .existsByTranslationId(
+                                            translation.getId()
+                                    );
+
+                    return new MyPageTranslationResponse(
+                            translation.getId(),
+                            translation.getOriginalText(),
+
+                            // 디자인의 '추천 번역'
+                            result.getCulturalTranslation(),
+
+                            translation.getCreatedAt(),
+                            hasMemo
+                    );
+                })
+
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+
+    // 저장된 번역 기록을 상황별로 집계한다.
+    // 예: BUSINESS -> 8, DAILY -> 5, TRAVEL -> 3
+    @Transactional(readOnly = true)
+    public TranslationStatisticsResponse getTranslationStatistics() {
+
+        List<Translation> translations =
+                translationRepository.findAll();
+
+        Map<String, Long> situationCounts =
+                translations.stream()
+                        .filter(translation ->
+                                translation.getSituation() != null
+                        )
+                        .collect(
+                                java.util.stream.Collectors.groupingBy(
+                                        Translation::getSituation,
+                                        java.util.stream.Collectors.counting()
+                                )
+                        );
+
+        return new TranslationStatisticsResponse(
+                translations.size(),
+                situationCounts
+        );
     }
 }

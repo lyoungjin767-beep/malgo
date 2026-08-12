@@ -125,4 +125,23 @@ public class AiPartner {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+
+    // AI 메이커에서 설정한 정보로 기존 AI 상대 정보를 수정
+    public void update(
+            String name,
+            String targetCountry,
+            String relationshipType,
+            String ageGroup,
+            String gender,
+            String speechStyle,
+            String characteristic
+    ) {
+        this.name = name;
+        this.targetCountry = targetCountry;
+        this.relationshipType = relationshipType;
+        this.ageGroup = ageGroup;
+        this.gender = gender;
+        this.speechStyle = speechStyle;
+        this.characteristic = characteristic;
+    }
 }
