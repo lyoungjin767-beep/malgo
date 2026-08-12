@@ -58,4 +58,16 @@ public class AiPartnerController {
                 aiPartnerService.updatePartner(id, request)
         );
     }
+
+    // 커스텀 AI 상대 삭제
+    // DELETE /api/partners/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePartner(
+            @PathVariable Long id
+    ) {
+
+        aiPartnerService.deletePartner(id);
+
+        return ResponseEntity.noContent().build();
+    }
 }

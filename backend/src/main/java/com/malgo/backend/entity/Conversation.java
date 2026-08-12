@@ -78,4 +78,9 @@ public class Conversation {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+    // 새로운 메시지가 생성됐을 때
+    public void updateLastActivity() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

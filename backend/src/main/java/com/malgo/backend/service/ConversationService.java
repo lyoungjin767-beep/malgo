@@ -18,6 +18,7 @@ import com.malgo.backend.dto.ConversationChatResponse;
 import com.malgo.backend.dto.ConversationSummaryResponse;
 import com.malgo.backend.entity.ConversationSummary;
 import com.malgo.backend.repository.ConversationSummaryRepository;
+import com.malgo.backend.dto.ConversationListResponse;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -103,6 +104,9 @@ public class ConversationService {
 
         ConversationMessage savedUserMessage =
                 messageRepository.save(userMessage);
+
+        // 새로운 메시지가 들어왔으므로 대화방의 최근 활동 시간 갱신
+        conversation.updateLastActivity();
 
         // 3. 선택된 AI 상대의 정보를 이용해 실제 OpenAI 응답 생성
         String aiContent = openAiClient.chat(
@@ -249,4 +253,57 @@ public class ConversationService {
                 .toList();
     }
 
+    // 저장된 대화방을 최근 활동 순서로 조회
+    @Transactional(readOnly = true)
+    public List<ConversationListResponse> getConversations() {
+
+        return conversationRepository
+                .findAllByOrderByUpdatedAtDesc()
+                .stream()
+                .map(conversation -> {
+
+                    AiPartner partner =
+                            conversation.getAiPartner();
+
+                    // 대화방의 가장 최근 메시지 조회
+                    String lastMessage =
+                            messageRepository
+                                    .findFirstByConversationIdOrderByCreatedAtDesc(
+                                            conversation.getId()
+                                    )
+                                    .map(ConversationMessage::getContent)
+                                    .orElse(null);
+
+                    return new ConversationListResponse(
+                            conversation.getId(),
+                            partner.getId(),
+                            partner.getName(),
+                            partner.getTargetCountry(),
+                            partner.getRelationshipType(),
+                            conversation.getSituation(),
+                            lastMessage,
+                            conversation.getUpdatedAt()
+                    );
+                })
+                .toList();
+    }
+
+    // 대화방과 연결된 메시지/요약을 함께 삭제
+    @Transactional
+    public void deleteConversation(Long conversationId) {
+
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "대화방을 찾을 수 없습니다. id=" + conversationId
+                        )
+                );
+
+        // FK 제약 때문에 자식 데이터부터 삭제
+        messageRepository.deleteByConversationId(conversationId);
+        summaryRepository.deleteByConversationId(conversationId);
+
+        // 마지막으로 대화방 삭제
+        conversationRepository.delete(conversation);
+    }
 }

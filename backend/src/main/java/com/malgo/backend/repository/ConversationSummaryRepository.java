@@ -13,4 +13,5 @@ public interface ConversationSummaryRepository
     // 특정 대화방의 요약 기록을 최신순으로 조회
     List<ConversationSummary>
     findByConversationIdOrderByCreatedAtDesc(Long conversationId);
+    void deleteByConversationId(Long conversationId);
 }

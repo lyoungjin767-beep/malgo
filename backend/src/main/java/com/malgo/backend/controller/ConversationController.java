@@ -5,6 +5,7 @@ import com.malgo.backend.service.ConversationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.malgo.backend.dto.ConversationSummaryResponse;
+import com.malgo.backend.dto.ConversationListResponse;
 
 import java.util.List;
 
@@ -78,5 +79,26 @@ public class ConversationController {
         return ResponseEntity.ok(
                 conversationService.getConversationSummaries(id)
         );
+    }
+
+    // 대화방 목록 조회
+    // GET /api/conversations
+    @GetMapping
+    public ResponseEntity<List<ConversationListResponse>> getConversations() {
+
+        return ResponseEntity.ok(
+                conversationService.getConversations()
+        );
+    }
+
+    // 대화방 삭제
+    // DELETE /api/conversations/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteConversation(
+            @PathVariable Long id
+    ) {
+        conversationService.deleteConversation(id);
+
+        return ResponseEntity.noContent().build();
     }
 }
