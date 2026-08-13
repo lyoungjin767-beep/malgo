@@ -2,6 +2,7 @@ package com.malgo.backend.controller;
 
 import com.malgo.backend.dto.AiPartnerResponse;
 import com.malgo.backend.service.AiPartnerService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,7 +40,7 @@ public class AiPartnerController {
     // POST /api/partners
     @PostMapping
     public ResponseEntity<AiPartnerResponse> createPartner(
-            @RequestBody AiPartnerCreateRequest request
+            @Valid @RequestBody AiPartnerCreateRequest request
     ) {
         return ResponseEntity.ok(
                 aiPartnerService.createCustomPartner(request)
@@ -52,7 +53,7 @@ public class AiPartnerController {
     @PutMapping("/{id}")
     public ResponseEntity<AiPartnerResponse> updatePartner(
             @PathVariable Long id,
-            @RequestBody AiPartnerUpdateRequest request
+            @Valid @RequestBody AiPartnerUpdateRequest request
     ) {
         return ResponseEntity.ok(
                 aiPartnerService.updatePartner(id, request)
@@ -69,5 +70,16 @@ public class AiPartnerController {
         aiPartnerService.deletePartner(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    // AI 상대 상세 조회
+    // GET /api/partners/{id}
+    @GetMapping("/{id}")
+    public ResponseEntity<AiPartnerResponse> getPartner(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                aiPartnerService.getPartner(id)
+        );
     }
 }

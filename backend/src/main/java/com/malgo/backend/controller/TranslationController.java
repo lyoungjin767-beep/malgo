@@ -75,7 +75,7 @@ public class TranslationController {
     @PutMapping("/{id}/memo")
     public ResponseEntity<TranslationMemoResponse> saveOrUpdateMemo(
             @PathVariable Long id,
-            @RequestBody TranslationMemoRequest request
+            @Valid @RequestBody TranslationMemoRequest request
     ) {
         return ResponseEntity.ok(
                 translationService.saveOrUpdateMemo(id, request)
@@ -114,5 +114,17 @@ public class TranslationController {
         return ResponseEntity.ok(
                 translationService.getTranslationStatistics()
         );
+    }
+
+    // 번역 기록 메모 삭제
+    // DELETE /api/translations/{id}/memo
+    @DeleteMapping("/{id}/memo")
+    public ResponseEntity<Void> deleteMemo(
+            @PathVariable Long id
+    ) {
+
+        translationService.deleteMemo(id);
+
+        return ResponseEntity.noContent().build();
     }
 }

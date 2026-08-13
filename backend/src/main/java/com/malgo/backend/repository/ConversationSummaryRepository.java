@@ -4,6 +4,7 @@ import com.malgo.backend.entity.ConversationSummary;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 // 대화 요약 결과 저장 및 조회를 담당
 
@@ -14,4 +15,7 @@ public interface ConversationSummaryRepository
     List<ConversationSummary>
     findByConversationIdOrderByCreatedAtDesc(Long conversationId);
     void deleteByConversationId(Long conversationId);
+
+    Optional<ConversationSummary>
+    findFirstByConversationIdOrderByCreatedAtDesc(Long conversationId);
 }

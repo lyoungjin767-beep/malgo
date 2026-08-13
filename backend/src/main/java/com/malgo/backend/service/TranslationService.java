@@ -410,4 +410,28 @@ public class TranslationService {
                 situationCounts
         );
     }
+
+    // 특정 번역 기록에 저장된 메모를 삭제
+    @Transactional
+    public void deleteMemo(Long translationId) {
+
+        // 번역 기록 자체가 존재하는지 먼저 확인
+        if (!translationRepository.existsById(translationId)) {
+            throw new IllegalArgumentException(
+                    "번역 기록을 찾을 수 없습니다. id=" + translationId
+            );
+        }
+
+        // 해당 번역 기록의 메모 조회
+        TranslationMemo memo = translationMemoRepository
+                .findByTranslationId(translationId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "삭제할 메모가 없습니다."
+                        )
+                );
+
+        // 메모 삭제
+        translationMemoRepository.delete(memo);
+    }
 }

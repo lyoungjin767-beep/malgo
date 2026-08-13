@@ -2,10 +2,13 @@ package com.malgo.backend.controller;
 
 import com.malgo.backend.dto.*;
 import com.malgo.backend.service.ConversationService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.malgo.backend.dto.ConversationSummaryResponse;
 import com.malgo.backend.dto.ConversationListResponse;
+import com.malgo.backend.dto.ConversationStatisticsResponse;
+import com.malgo.backend.dto.ConversationDetailResponse;
 
 import java.util.List;
 
@@ -27,7 +30,7 @@ public class ConversationController {
     // POST /api/conversations
     @PostMapping
     public ResponseEntity<ConversationResponse> createConversation(
-            @RequestBody ConversationCreateRequest request
+            @Valid @RequestBody ConversationCreateRequest request
     ) {
         return ResponseEntity.ok(
                 conversationService.createConversation(request)
@@ -40,7 +43,7 @@ public class ConversationController {
     @PostMapping("/{id}/messages")
     public ResponseEntity<ConversationChatResponse> sendMessage(
             @PathVariable Long id,
-            @RequestBody ConversationMessageRequest request
+            @Valid @RequestBody ConversationMessageRequest request
     ) {
         return ResponseEntity.ok(
                 conversationService.sendMessage(id, request)
@@ -100,5 +103,38 @@ public class ConversationController {
         conversationService.deleteConversation(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    // 마이페이지 분야별 대화 통계 조회
+    // GET /api/conversations/statistics
+    @GetMapping("/statistics")
+    public ResponseEntity<ConversationStatisticsResponse>
+    getConversationStatistics() {
+
+        return ResponseEntity.ok(
+                conversationService.getConversationStatistics()
+        );
+    }
+
+    // 대화방 상세 조회
+    // GET /api/conversations/{id}
+    @GetMapping("/{id}")
+    public ResponseEntity<ConversationDetailResponse> getConversationDetail(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                conversationService.getConversationDetail(id)
+        );
+    }
+
+    // 가장 최근 대화 요약 조회
+    // GET /api/conversations/{id}/summary/latest
+    @GetMapping("/{id}/summary/latest")
+    public ResponseEntity<ConversationSummaryResponse> getLatestConversationSummary(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                conversationService.getLatestConversationSummary(id)
+        );
     }
 }

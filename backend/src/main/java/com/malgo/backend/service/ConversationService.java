@@ -19,9 +19,13 @@ import com.malgo.backend.dto.ConversationSummaryResponse;
 import com.malgo.backend.entity.ConversationSummary;
 import com.malgo.backend.repository.ConversationSummaryRepository;
 import com.malgo.backend.dto.ConversationListResponse;
+import com.malgo.backend.dto.ConversationStatisticsResponse;
+import com.malgo.backend.dto.ConversationDetailResponse;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 // 대화방 생성과 메시지 저장/조회를 처리
 
@@ -305,5 +309,133 @@ public class ConversationService {
 
         // 마지막으로 대화방 삭제
         conversationRepository.delete(conversation);
+    }
+
+    // 저장된 대화방을 situation 기준으로 집계
+    // 예: BUSINESS -> 3, DAILY -> 2
+    //전체 대화 수를 기준으로 비율도 함께 계산
+    @Transactional(readOnly = true)
+    public ConversationStatisticsResponse getConversationStatistics() {
+
+        List<Conversation> conversations =
+                conversationRepository.findAll();
+
+        long totalCount = conversations.size();
+
+        Map<String, Long> counts = conversations.stream()
+                .filter(conversation ->
+                        conversation.getSituation() != null
+                                && !conversation.getSituation().isBlank()
+                )
+                .collect(
+                        Collectors.groupingBy(
+                                Conversation::getSituation,
+                                LinkedHashMap::new,
+                                Collectors.counting()
+                        )
+                );
+
+        Map<String, Double> percentages =
+                new LinkedHashMap<>();
+
+        counts.forEach((situation, count) -> {
+
+            double percentage =
+                    totalCount == 0
+                            ? 0.0
+                            : ((double) count / totalCount) * 100;
+
+            // 소수점 첫째 자리까지
+            percentage =
+                    Math.round(percentage * 10.0) / 10.0;
+
+            percentages.put(
+                    situation,
+                    percentage
+            );
+        });
+
+        return new ConversationStatisticsResponse(
+                totalCount,
+                counts,
+                percentages
+        );
+    }
+
+    // 특정 대화방의 상세 정보를 조회
+    // AI 상대 정보와 저장된 메시지를 함께 반환
+    @Transactional(readOnly = true)
+    public ConversationDetailResponse getConversationDetail(
+            Long conversationId
+    ) {
+
+        // 1. 대화방 조회
+        Conversation conversation =
+                conversationRepository.findById(conversationId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "대화방을 찾을 수 없습니다. id=" + conversationId
+                                )
+                        );
+
+        // 2. 연결된 AI 상대 정보
+        AiPartner partner = conversation.getAiPartner();
+
+        // 3. 대화방 메시지를 시간순으로 조회
+        List<ConversationMessageResponse> messages =
+                messageRepository
+                        .findByConversationIdOrderByCreatedAtAsc(conversationId)
+                        .stream()
+                        .map(message ->
+                                new ConversationMessageResponse(
+                                        message.getId(),
+                                        message.getSenderType(),
+                                        message.getContent(),
+                                        message.getCreatedAt()
+                                )
+                        )
+                        .toList();
+
+        // 4. 상세 정보 반환
+        return new ConversationDetailResponse(
+                conversation.getId(),
+                partner.getId(),
+                partner.getName(),
+                partner.getTargetCountry(),
+                partner.getRelationshipType(),
+                conversation.getSituation(),
+                conversation.getCreatedAt(),
+                conversation.getUpdatedAt(),
+                messages
+        );
+    }
+
+    // 특정 대화방의 가장 최근 요약 1건을 조회
+    @Transactional(readOnly = true)
+    public ConversationSummaryResponse getLatestConversationSummary(
+            Long conversationId
+    ) {
+
+        if (!conversationRepository.existsById(conversationId)) {
+            throw new IllegalArgumentException(
+                    "대화방을 찾을 수 없습니다. id=" + conversationId
+            );
+        }
+
+        ConversationSummary summary =
+                summaryRepository
+                        .findFirstByConversationIdOrderByCreatedAtDesc(conversationId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "저장된 대화 요약이 없습니다."
+                                )
+                        );
+
+        return new ConversationSummaryResponse(
+                summary.getId(),
+                conversationId,
+                summary.getSummary(),
+                summary.getCreatedAt()
+        );
     }
 }

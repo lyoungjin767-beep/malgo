@@ -168,4 +168,28 @@ public class AiPartnerService {
         // 마지막으로 AI 상대 삭제
         aiPartnerRepository.delete(partner);
     }
+
+    // AI 상대 1명의 상세 정보를 조회
+    @Transactional(readOnly = true)
+    public AiPartnerResponse getPartner(Long partnerId) {
+
+        AiPartner partner = aiPartnerRepository.findById(partnerId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "AI 상대를 찾을 수 없습니다. id=" + partnerId
+                        )
+                );
+
+        return new AiPartnerResponse(
+                partner.getId(),
+                partner.getName(),
+                partner.getTargetCountry(),
+                partner.getRelationshipType(),
+                partner.getAgeGroup(),
+                partner.getGender(),
+                partner.getSpeechStyle(),
+                partner.getCharacteristic(),
+                partner.isCustom()
+        );
+    }
 }
