@@ -1,7 +1,7 @@
 package com.malgo.backend.entity;
 
 import jakarta.persistence.*;
-
+import com.malgo.backend.member.entity.Member;
 import java.time.LocalDateTime;
 
 //사용자가 대화할 AI 상대 정보를 저장하는 엔티티
@@ -14,6 +14,12 @@ public class AiPartner {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    // 커스텀 AI를 만든 회원
+    // 기본 제공 AI는 member = null
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private Member member;
 
     // 화면에 표시할 AI 상대 이름
     @Column(nullable = false, length = 50)
@@ -80,6 +86,28 @@ public class AiPartner {
         this.custom = custom;
     }
 
+    public AiPartner(
+            Member member,
+            String name,
+            String targetCountry,
+            String relationshipType,
+            String ageGroup,
+            String gender,
+            String speechStyle,
+            String characteristic,
+            boolean custom
+    ) {
+        this.member = member;
+        this.name = name;
+        this.targetCountry = targetCountry;
+        this.relationshipType = relationshipType;
+        this.ageGroup = ageGroup;
+        this.gender = gender;
+        this.speechStyle = speechStyle;
+        this.characteristic = characteristic;
+        this.custom = custom;
+    }
+
     // DB에 처음 저장되기 직전에 생성 시간을 자동으로 기록
     @PrePersist
     public void prePersist() {
@@ -89,6 +117,8 @@ public class AiPartner {
     public Long getId() {
         return id;
     }
+
+    public Member getMember(){return member;}
 
     public String getName() {
         return name;
