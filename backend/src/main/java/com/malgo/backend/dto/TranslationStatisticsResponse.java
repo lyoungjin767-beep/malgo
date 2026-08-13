@@ -6,6 +6,7 @@ import java.util.Map;
 
 public record TranslationStatisticsResponse(
         long totalCount,
-        Map<String, Long> situations
+        Map<String, Long> situations,
+        Map<String, Double> percentages
 ) {
 }

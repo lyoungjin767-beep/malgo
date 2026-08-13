@@ -44,54 +44,54 @@ public class TranslationController {
 
     // 번역 기록 상세 조회
     // URL 예시 : GET /api/translations/1
-
-    @GetMapping("/{id}")
+    @GetMapping("/member/{memberId}/{id}")
     public ResponseEntity<TranslationDetailResponse> getTranslationDetail(
+            @PathVariable Long memberId,
             @PathVariable Long id
     ) {
-
-        TranslationDetailResponse detail =
-                translationService.getTranslationDetail(id);
-
-        return ResponseEntity.ok(detail);
+        return ResponseEntity.ok(
+                translationService.getTranslationDetail(memberId, id)
+        );
     }
 
     // 번역 기록 삭제
     // URL 예시: DELETE /api/translations/1
-
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/member/{memberId}/{id}")
     public ResponseEntity<Void> deleteTranslation(
+            @PathVariable Long memberId,
             @PathVariable Long id
     ) {
-
-        translationService.deleteTranslation(id);
-
+        translationService.deleteTranslation(memberId, id);
         // 삭제 성공 시 본문 없이 204 No Content 반환
         return ResponseEntity.noContent().build();
     }
 
     // 번역 기록 메모 저장 또는 수정
     // PUT /api/translations/{id}/memo
-
-    @PutMapping("/{id}/memo")
+    @PutMapping("/member/{memberId}/{id}/memo")
     public ResponseEntity<TranslationMemoResponse> saveOrUpdateMemo(
+            @PathVariable Long memberId,
             @PathVariable Long id,
             @Valid @RequestBody TranslationMemoRequest request
     ) {
         return ResponseEntity.ok(
-                translationService.saveOrUpdateMemo(id, request)
+                translationService.saveOrUpdateMemo(
+                        memberId,
+                        id,
+                        request
+                )
         );
     }
 
-    // 번역 기록 메모 조회
-    // ET /api/translations/{id}/memo
-
-    @GetMapping("/{id}/memo")
+    // 특정 회원의 번역 기록 메모 조회
+    // GET /api/translations/member/{memberId}/{id}/memo
+    @GetMapping("/member/{memberId}/{id}/memo")
     public ResponseEntity<TranslationMemoResponse> getMemo(
+            @PathVariable Long memberId,
             @PathVariable Long id
     ) {
         return ResponseEntity.ok(
-                translationService.getMemo(id)
+                translationService.getMemo(memberId, id)
         );
     }
 
@@ -108,25 +108,28 @@ public class TranslationController {
         );
     }
 
-    // 번역 상황별 사용 통계 조회
-    // GET /api/translations/statistics
-    @GetMapping("/statistics")
+    // 특정 회원의 번역 상황별 사용 통계 조회
+    // GET /api/translations/member/{memberId}/statistics
+    @GetMapping("/member/{memberId}/statistics")
     public ResponseEntity<TranslationStatisticsResponse>
-    getTranslationStatistics() {
+    getTranslationStatistics(
+            @PathVariable Long memberId
+    ) {
 
         return ResponseEntity.ok(
-                translationService.getTranslationStatistics()
+                translationService.getTranslationStatistics(memberId)
         );
     }
 
-    // 번역 기록 메모 삭제
-    // DELETE /api/translations/{id}/memo
-    @DeleteMapping("/{id}/memo")
+    // 특정 회원의 번역 기록 메모 삭제
+    // DELETE /api/translations/member/{memberId}/{id}/memo
+    @DeleteMapping("/member/{memberId}/{id}/memo")
     public ResponseEntity<Void> deleteMemo(
+            @PathVariable Long memberId,
             @PathVariable Long id
     ) {
 
-        translationService.deleteMemo(id);
+        translationService.deleteMemo(memberId, id);
 
         return ResponseEntity.noContent().build();
     }

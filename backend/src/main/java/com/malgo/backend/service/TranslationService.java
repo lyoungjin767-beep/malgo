@@ -24,9 +24,11 @@ import com.malgo.backend.dto.TranslationStatisticsResponse;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class TranslationService {
@@ -174,13 +176,14 @@ public class TranslationService {
      */
 
     @Transactional(readOnly = true)
-    public TranslationDetailResponse getTranslationDetail(Long translationId) {
+    public TranslationDetailResponse getTranslationDetail(
+            Long memberId,
+            Long translationId
+    ) {
 
-        // 1. URL로 전달받은 ID에 해당하는 번역 요청을 찾는다.
-        Translation translation = translationRepository.findById(translationId)
-                .orElseThrow(() ->
-                        new TranslationNotFoundException(translationId)
-                );
+        // 해당 번역 기록이 이 회원의 것인지 확인
+        Translation translation =
+                getOwnedTranslation(memberId, translationId);
 
         // 2. 번역 요청 ID와 연결된 AI 번역 결과를 찾는다.
         TranslationResult result = translationResultRepository
@@ -245,23 +248,16 @@ public class TranslationService {
     }
 
     // 번역 기록 1건을 삭제
-    // 삭제 순서
-    /** 1. 번역 요청이 존재하는지 확인
-     * 2. 연결된 번역 결과 조회
-     * 3. 결과에 연결된 문화적 경고 삭제
-     * 4. 번역 결과 삭제
-     * 5. 번역 요청 삭제
-     */
     // 외래키 관계가 있기 때문에 자식 데이터를 먼저 삭제
-
     @Transactional
-    public void deleteTranslation(Long translationId) {
+    public void deleteTranslation(
+            Long memberId,
+            Long translationId
+    ) {
 
-        // 1. 삭제할 번역 요청이 실제로 존재하는지 확인
-        Translation translation = translationRepository.findById(translationId)
-                .orElseThrow(() ->
-                    new TranslationNotFoundException(translationId)
-                );
+        // 1. 번역 기록이 존재하고 해당 회원의 기록인지 확인
+        Translation translation =
+                getOwnedTranslation(memberId, translationId);
 
         // 2. 해당 번역 요청에 연결된 AI 결과가 있는지 확인
         translationResultRepository.findByTranslationId(translationId)
@@ -269,7 +265,8 @@ public class TranslationService {
 
                     // 3. 번역 결과에 연결된 문화적 경고를 먼저 삭제
                     List<CultureWarning> warnings =
-                            cultureWarningRepository.findByTranslationResultId(result.getId());
+                            cultureWarningRepository
+                                    .findByTranslationResultId(result.getId());
 
                     cultureWarningRepository.deleteAll(warnings);
 
@@ -285,17 +282,14 @@ public class TranslationService {
     // 이미 메모가 있으면 수정하고, 없으면 새 메모를 생성
     @Transactional
     public TranslationMemoResponse saveOrUpdateMemo(
+            Long memberId,
             Long translationId,
             TranslationMemoRequest request
     ) {
 
         // 1. 번역 기록 존재 여부 확인
-        Translation translation = translationRepository.findById(translationId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "번역 기록을 찾을 수 없습니다. id=" + translationId
-                        )
-                );
+        Translation translation =
+                getOwnedTranslation(memberId, translationId);
 
         // 2. 기존 메모가 있는지 확인
         TranslationMemo memo = translationMemoRepository
@@ -329,14 +323,13 @@ public class TranslationService {
 
     // 특정 번역 기록에 저장된 메모를 조회
     @Transactional(readOnly = true)
-    public TranslationMemoResponse getMemo(Long translationId) {
+    public TranslationMemoResponse getMemo(
+            Long memberId,
+            Long translationId
+    ) {
 
-        // 번역 기록 자체가 존재하는지 확인
-        if (!translationRepository.existsById(translationId)) {
-            throw new IllegalArgumentException(
-                    "번역 기록을 찾을 수 없습니다. id=" + translationId
-            );
-        }
+        // 해당 번역 기록이 이 회원의 것인지 확인
+        getOwnedTranslation(memberId, translationId);
 
         TranslationMemo memo = translationMemoRepository
                 .findByTranslationId(translationId)
@@ -408,41 +401,57 @@ public class TranslationService {
     // 저장된 번역 기록을 상황별로 집계한다.
     // 예: BUSINESS -> 8, DAILY -> 5, TRAVEL -> 3
     @Transactional(readOnly = true)
-    public TranslationStatisticsResponse getTranslationStatistics() {
+    public TranslationStatisticsResponse getTranslationStatistics(
+            Long memberId
+    ) {
+
+        // 회원 존재 여부 확인
+        if (!memberRepository.existsById(memberId)) {
+            throw new IllegalArgumentException(
+                    "회원을 찾을 수 없습니다. id=" + memberId
+            );
+        }
 
         List<Translation> translations =
-                translationRepository.findAll();
+                translationRepository
+                        .findByMemberIdOrderByCreatedAtDesc(memberId);
 
-        Map<String, Long> situationCounts =
-                translations.stream()
-                        .filter(translation ->
-                                translation.getSituation() != null
-                        )
-                        .collect(
-                                java.util.stream.Collectors.groupingBy(
-                                        Translation::getSituation,
-                                        java.util.stream.Collectors.counting()
-                                )
-                        );
+        long totalCount = translations.size();
+
+        Map<String, Long> counts = translations.stream()
+                .collect(Collectors.groupingBy(
+                        Translation::getSituation,
+                        Collectors.counting()
+                ));
+
+        Map<String, Double> percentages = new HashMap<>();
+
+        if (totalCount > 0) {
+            counts.forEach((situation, count) -> {
+                double percentage =
+                        (count * 100.0) / totalCount;
+
+                percentages.put(situation, percentage);
+            });
+        }
 
         return new TranslationStatisticsResponse(
-                translations.size(),
-                situationCounts
+                totalCount,
+                counts,
+                percentages
         );
     }
 
     // 특정 번역 기록에 저장된 메모를 삭제
     @Transactional
-    public void deleteMemo(Long translationId) {
+    public void deleteMemo(
+            Long memberId,
+            Long translationId
+    ) {
 
-        // 번역 기록 자체가 존재하는지 먼저 확인
-        if (!translationRepository.existsById(translationId)) {
-            throw new IllegalArgumentException(
-                    "번역 기록을 찾을 수 없습니다. id=" + translationId
-            );
-        }
+        // 해당 번역 기록이 이 회원의 것인지 확인
+        getOwnedTranslation(memberId, translationId);
 
-        // 해당 번역 기록의 메모 조회
         TranslationMemo memo = translationMemoRepository
                 .findByTranslationId(translationId)
                 .orElseThrow(() ->
@@ -451,7 +460,24 @@ public class TranslationService {
                         )
                 );
 
-        // 메모 삭제
         translationMemoRepository.delete(memo);
+    }
+
+    private Translation getOwnedTranslation(
+            Long memberId,
+            Long translationId
+    ) {
+        Translation translation = translationRepository.findById(translationId)
+                .orElseThrow(() ->
+                        new TranslationNotFoundException(translationId)
+                );
+
+        if (!translation.getMember().getId().equals(memberId)) {
+            throw new IllegalArgumentException(
+                    "해당 회원의 번역 기록이 아닙니다."
+            );
+        }
+
+        return translation;
     }
 }
