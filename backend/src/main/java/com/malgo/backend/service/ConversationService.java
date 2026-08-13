@@ -70,30 +70,70 @@ public class ConversationService {
                         )
                 );
 
-        AiPartner partner = aiPartnerRepository.findById(request.aiPartnerId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "AI 상대를 찾을 수 없습니다. id=" + request.aiPartnerId()
-                        )
-                );
+        AiPartner partner = null;
 
-        // 커스텀 AI라면 현재 회원 소유인지 확인
-        if (partner.isCustom()) {
+        String targetCountry;
+        String relationshipType;
+        String ageGroup;
+        String speechStyle;
+        String characteristic;
 
-            if (partner.getMember() == null
-                    || !partner.getMember().getId().equals(member.getId())) {
+        if (request.aiPartnerId() != null) {
 
-                throw new AccessDeniedException(
-                        "해당 회원의 AI 상대가 아닙니다."
+            // AI Partner를 선택한 경우
+            partner = aiPartnerRepository.findById(request.aiPartnerId())
+                    .orElseThrow(() ->
+                            new IllegalArgumentException(
+                                    "AI 상대를 찾을 수 없습니다. id=" + request.aiPartnerId()
+                            )
+                    );
+
+            // 커스텀 AI라면 현재 회원 소유인지 확인
+            if (partner.isCustom()) {
+                if (partner.getMember() == null
+                        || !partner.getMember().getId().equals(member.getId())) {
+
+                    throw new AccessDeniedException(
+                            "해당 회원의 AI 상대가 아닙니다."
+                    );
+                }
+            }
+
+            // 선택한 AI Partner의 설정 사용
+            targetCountry = partner.getTargetCountry();
+            relationshipType = partner.getRelationshipType();
+            ageGroup = partner.getAgeGroup();
+            speechStyle = partner.getSpeechStyle();
+            characteristic = partner.getCharacteristic();
+
+        } else {
+
+            // AI Partner를 선택하지 않은 경우 직접 설정값 사용
+            if (request.targetCountry() == null
+                    || request.targetCountry().isBlank()) {
+
+                throw new IllegalArgumentException(
+                        "AI 상대를 선택하지 않은 경우 대상 국가는 필수입니다."
                 );
             }
+
+            targetCountry = request.targetCountry();
+            relationshipType = request.relationshipType();
+            ageGroup = request.ageGroup();
+            speechStyle = request.speechStyle();
+            characteristic = request.characteristic();
         }
 
         Conversation conversation = new Conversation(
                 member,
                 partner,
                 request.situation(),
-                request.field()
+                request.field(),
+                targetCountry,
+                relationshipType,
+                ageGroup,
+                speechStyle,
+                characteristic
         );
 
         Conversation saved =
@@ -101,8 +141,8 @@ public class ConversationService {
 
         return new ConversationResponse(
                 saved.getId(),
-                partner.getId(),
-                partner.getName(),
+                partner != null ? partner.getId() : null,
+                partner != null ? partner.getName() : null,
                 saved.getSituation(),
                 saved.getField()
         );
@@ -122,6 +162,26 @@ public class ConversationService {
 
         AiPartner partner = conversation.getAiPartner();
 
+        String partnerName;
+        String targetCountry;
+        String relationshipType;
+        String speechStyle;
+        String characteristic;
+
+        if (partner != null) {
+            partnerName = partner.getName();
+            targetCountry = partner.getTargetCountry();
+            relationshipType = partner.getRelationshipType();
+            speechStyle = partner.getSpeechStyle();
+            characteristic = partner.getCharacteristic();
+        } else {
+            partnerName = "직접 설정 상대";
+            targetCountry = conversation.getTargetCountry();
+            relationshipType = conversation.getRelationshipType();
+            speechStyle = conversation.getSpeechStyle();
+            characteristic = conversation.getCharacteristic();
+        }
+
         // 2. 사용자 메시지 저장
         ConversationMessage userMessage =
                 new ConversationMessage(
@@ -138,11 +198,11 @@ public class ConversationService {
 
         // 3. 선택된 AI 상대의 정보를 이용해 실제 OpenAI 응답 생성
         String aiContent = openAiClient.chat(
-                partner.getName(),
-                partner.getTargetCountry(),
-                partner.getRelationshipType(),
-                partner.getSpeechStyle(),
-                partner.getCharacteristic(),
+                partnerName,
+                targetCountry,
+                relationshipType,
+                speechStyle,
+                characteristic,
                 conversation.getSituation(),
                 conversation.getField(),
                 request.content()
@@ -361,6 +421,30 @@ public class ConversationService {
         // 2. 연결된 AI 상대 정보
         AiPartner partner = conversation.getAiPartner();
 
+        Long aiPartnerId = null;
+        String aiPartnerName = "직접 설정 상대";
+        String targetCountry;
+        String relationshipType;
+        String ageGroup;
+        String speechStyle;
+        String characteristic;
+
+        if (partner != null) {
+            aiPartnerId = partner.getId();
+            aiPartnerName = partner.getName();
+            targetCountry = partner.getTargetCountry();
+            relationshipType = partner.getRelationshipType();
+            ageGroup = partner.getAgeGroup();
+            speechStyle = partner.getSpeechStyle();
+            characteristic = partner.getCharacteristic();
+        } else {
+            targetCountry = conversation.getTargetCountry();
+            relationshipType = conversation.getRelationshipType();
+            ageGroup = conversation.getAgeGroup();
+            speechStyle = conversation.getSpeechStyle();
+            characteristic = conversation.getCharacteristic();
+        }
+
         // 3. 대화방 메시지를 시간순으로 조회
         List<ConversationMessageResponse> messages =
                 messageRepository
@@ -379,10 +463,13 @@ public class ConversationService {
         // 4. 상세 정보 반환
         return new ConversationDetailResponse(
                 conversation.getId(),
-                partner.getId(),
-                partner.getName(),
-                partner.getTargetCountry(),
-                partner.getRelationshipType(),
+                aiPartnerId,
+                aiPartnerName,
+                targetCountry,
+                relationshipType,
+                ageGroup,
+                speechStyle,
+                characteristic,
                 conversation.getSituation(),
                 conversation.getField(),
                 conversation.getCreatedAt(),
@@ -437,6 +524,21 @@ public class ConversationService {
 
                     AiPartner partner = conversation.getAiPartner();
 
+                    Long aiPartnerId = null;
+                    String aiPartnerName = "직접 설정 상대";
+                    String targetCountry;
+                    String relationshipType;
+
+                    if (partner != null) {
+                        aiPartnerId = partner.getId();
+                        aiPartnerName = partner.getName();
+                        targetCountry = partner.getTargetCountry();
+                        relationshipType = partner.getRelationshipType();
+                    } else {
+                        targetCountry = conversation.getTargetCountry();
+                        relationshipType = conversation.getRelationshipType();
+                    }
+
                     // 해당 대화방의 가장 최근 메시지 조회
                     String lastMessage =
                             messageRepository
@@ -448,10 +550,10 @@ public class ConversationService {
 
                     return new ConversationListResponse(
                             conversation.getId(),
-                            partner.getId(),
-                            partner.getName(),
-                            partner.getTargetCountry(),
-                            partner.getRelationshipType(),
+                            aiPartnerId,
+                            aiPartnerName,
+                            targetCountry,
+                            relationshipType,
                             conversation.getSituation(),
                             conversation.getField(),
                             lastMessage,

@@ -16,9 +16,10 @@ public class Conversation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 어떤 AI 상대와 대화하는지 연결
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "ai_partner_id", nullable = false)
+    // AI Partner를 선택한 경우 연결
+    // 직접 설정으로 대화하는 경우 null
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ai_partner_id")
     private AiPartner aiPartner;
 
     // 어떤 회원의 대화방인지 연결
@@ -44,6 +45,23 @@ public class Conversation {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    // AI Partner를 선택하지 않았을 때 사용하는 직접 설정 정보
+
+    @Column(length = 10)
+    private String targetCountry;
+
+    @Column(length = 30)
+    private String relationshipType;
+
+    @Column(length = 30)
+    private String ageGroup;
+
+    @Column(length = 30)
+    private String speechStyle;
+
+    @Column(columnDefinition = "TEXT")
+    private String characteristic;
+
     protected Conversation() {
     }
 
@@ -51,12 +69,22 @@ public class Conversation {
             Member member,
             AiPartner aiPartner,
             String situation,
-            String field
+            String field,
+            String targetCountry,
+            String relationshipType,
+            String ageGroup,
+            String speechStyle,
+            String characteristic
     ) {
         this.member = member;
         this.aiPartner = aiPartner;
         this.situation = situation;
         this.field = field;
+        this.targetCountry = targetCountry;
+        this.relationshipType = relationshipType;
+        this.ageGroup = ageGroup;
+        this.speechStyle = speechStyle;
+        this.characteristic = characteristic;
     }
 
     // 대화방을 처음 저장할 때 생성 시간과 수정 시간을 자동으로 설정
@@ -98,6 +126,26 @@ public class Conversation {
 
     public Member getMember() {
         return member;
+    }
+
+    public String getTargetCountry() {
+        return targetCountry;
+    }
+
+    public String getRelationshipType() {
+        return relationshipType;
+    }
+
+    public String getAgeGroup() {
+        return ageGroup;
+    }
+
+    public String getSpeechStyle() {
+        return speechStyle;
+    }
+
+    public String getCharacteristic() {
+        return characteristic;
     }
 
     // 새로운 메시지가 생성됐을 때

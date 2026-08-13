@@ -10,7 +10,7 @@ public record ConversationCreateRequest(
         @NotNull(message = "회원 ID는 필수입니다.")
         Long memberId,
 
-        @NotNull(message = "AI 상대 ID는 필수입니다.")
+        // AI Partner를 선택하지 않는 경우 null 가능
         Long aiPartnerId,
 
         @NotBlank(message = "대화 상황은 필수입니다.")
@@ -21,6 +21,13 @@ public record ConversationCreateRequest(
                 regexp = "IT_DEVELOPMENT|DESIGN|MARKETING|SALES|FINANCE",
                 message = "분야는 IT_DEVELOPMENT, DESIGN, MARKETING, SALES, FINANCE 중 하나여야 합니다."
         )
-        String field
+        String field,
+
+        // AI Partner 미선택 시 직접 설정
+        String targetCountry,
+        String relationshipType,
+        String ageGroup,
+        String speechStyle,
+        String characteristic
 ) {
 }
