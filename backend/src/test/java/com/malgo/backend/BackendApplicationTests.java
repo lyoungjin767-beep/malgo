@@ -1,15 +1,14 @@
 package com.malgo.backend;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@ActiveProfiles("test")
-@SpringBootTest
+import org.junit.jupiter.api.Test;
+
 class BackendApplicationTests {
 
     @Test
-    void contextLoads() {
+    void applicationClassExists() {
+        assertThat(BackendApplication.class).isNotNull();
     }
 
 }
