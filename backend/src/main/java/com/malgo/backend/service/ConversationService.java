@@ -7,6 +7,7 @@ import com.malgo.backend.dto.ConversationResponse;
 import com.malgo.backend.entity.AiPartner;
 import com.malgo.backend.entity.Conversation;
 import com.malgo.backend.entity.ConversationMessage;
+import com.malgo.backend.exception.AccessDeniedException;
 import com.malgo.backend.repository.AiPartnerRepository;
 import com.malgo.backend.repository.ConversationMessageRepository;
 import com.malgo.backend.repository.ConversationRepository;
@@ -75,6 +76,18 @@ public class ConversationService {
                                 "AI 상대를 찾을 수 없습니다. id=" + request.aiPartnerId()
                         )
                 );
+
+        // 커스텀 AI라면 현재 회원 소유인지 확인
+        if (partner.isCustom()) {
+
+            if (partner.getMember() == null
+                    || !partner.getMember().getId().equals(member.getId())) {
+
+                throw new AccessDeniedException(
+                        "해당 회원의 AI 상대가 아닙니다."
+                );
+            }
+        }
 
         Conversation conversation = new Conversation(
                 member,
@@ -199,7 +212,7 @@ public class ConversationService {
                 );
 
         if (messages.isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new IllegalStateException(
                     "요약할 대화 내용이 없습니다."
             );
         }
@@ -278,6 +291,12 @@ public class ConversationService {
     //전체 대화 수를 기준으로 비율도 함께 계산
     @Transactional(readOnly = true)
     public ConversationStatisticsResponse getConversationStatistics(Long memberId) {
+
+        if (!memberRepository.existsById(memberId)) {
+            throw new IllegalArgumentException(
+                    "회원을 찾을 수 없습니다. id=" + memberId
+            );
+        }
 
         List<Conversation> conversations =
                 conversationRepository
@@ -402,7 +421,7 @@ public class ConversationService {
 
         // 회원 존재 여부 확인
         if (!memberRepository.existsById(memberId)) {
-            throw new IllegalArgumentException(
+            throw new IllegalStateException(
                     "회원을 찾을 수 없습니다. id=" + memberId
             );
         }
@@ -451,7 +470,7 @@ public class ConversationService {
                         );
 
         if (!conversation.getMember().getId().equals(memberId)) {
-            throw new IllegalArgumentException(
+            throw new AccessDeniedException(
                     "해당 회원의 대화방이 아닙니다."
             );
         }

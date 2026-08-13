@@ -38,9 +38,9 @@ public class ConversationController {
     }
 
     // 사용자 메시지를 전송하고 AI 응답을 자동 생성
-    // POST /api/conversations/{id}/messages
+    // POST /api/conversations/member/{memberId}/{id}/messages
 
-    @PostMapping("member/{memberId}/{id}/messages")
+    @PostMapping("/member/{memberId}/{id}/messages")
     public ResponseEntity<ConversationChatResponse> sendMessage(
             @PathVariable Long memberId,
             @PathVariable Long id,
@@ -52,7 +52,7 @@ public class ConversationController {
     }
 
     // 대화방 메시지 조회
-    // GET /api/conversations/{id}/messages
+    // GET /api/conversations/member/{memberId}/{id}/messages
 
     @GetMapping("/member/{memberId}/{id}/messages")
     public ResponseEntity<List<ConversationMessageResponse>> getMessages(
@@ -65,7 +65,7 @@ public class ConversationController {
     }
 
     // 대화 내용 요약
-    // POST /api/conversations/{id}/summary
+    // POST /api/conversations/member/{memberId}/{id}/summary
     @PostMapping("/member/{memberId}/{id}/summary")
     public ResponseEntity<ConversationSummaryResponse> summarizeConversation(
             @PathVariable Long memberId,
@@ -77,7 +77,7 @@ public class ConversationController {
     }
 
     // 저장된 대화 요약 목록 조회
-    // GET /api/conversations/{id}/summaries
+    // GET /api/conversations/member/{memberId}/{id}/summaries
     @GetMapping("/member/{memberId}/{id}/summaries")
     public ResponseEntity<List<ConversationSummaryResponse>> getConversationSummaries(
             @PathVariable Long memberId,
@@ -89,7 +89,7 @@ public class ConversationController {
     }
 
     // 대화방 삭제
-    // DELETE /api/conversations/{id}
+    // DELETE /api/conversations/member/{memberId}/{id}
     @DeleteMapping("/member/{memberId}/{id}")
     public ResponseEntity<Void> deleteConversation(
             @PathVariable Long memberId,
@@ -101,7 +101,7 @@ public class ConversationController {
     }
 
     // 마이페이지 분야별 대화 통계 조회
-    // GET /api/conversations/statistics
+    // GET /api/conversations/member/{memberId}/statistics
     @GetMapping("/member/{memberId}/statistics")
     public ResponseEntity<ConversationStatisticsResponse>
     getConversationStatistics(@PathVariable Long memberId) {
@@ -112,7 +112,7 @@ public class ConversationController {
     }
 
     // 대화방 상세 조회
-    // GET /api/conversations/{id}
+    // GET /api/conversations/member/{memberId}/{id}
     @GetMapping("/member/{memberId}/{id}")
     public ResponseEntity<ConversationDetailResponse> getConversationDetail(
             @PathVariable Long memberId,
@@ -124,7 +124,7 @@ public class ConversationController {
     }
 
     // 가장 최근 대화 요약 조회
-    // GET /api/conversations/{id}/summary/latest
+    // GET /api/conversations/member/{memberId}/{id}/summary/latest
     @GetMapping("/member/{memberId}/{id}/summary/latest")
     public ResponseEntity<ConversationSummaryResponse> getLatestConversationSummary(
             @PathVariable Long memberId,

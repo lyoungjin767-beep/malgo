@@ -9,8 +9,6 @@ import java.util.List;
 
 public interface ConversationRepository
         extends JpaRepository<Conversation, Long> {
-    //최근에 사용한 대화방부터 조회
-    List<Conversation> findAllByOrderByUpdatedAtDesc();
 
     List<Conversation> findByAiPartnerId(Long aiPartnerId);
 

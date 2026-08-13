@@ -2,6 +2,7 @@ package com.malgo.backend.service;
 
 import com.malgo.backend.ai.OpenAiClient;
 import com.malgo.backend.dto.*;
+import com.malgo.backend.exception.AccessDeniedException;
 import com.malgo.backend.exception.TranslationNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -274,7 +275,12 @@ public class TranslationService {
                     translationResultRepository.delete(result);
                 });
 
-        // 5. 마지막으로 번역 요청 삭제
+        // 5. 연결된 메모가 있다면 삭제
+        translationMemoRepository
+                .findByTranslationId(translationId)
+                .ifPresent(translationMemoRepository::delete);
+
+        // 6. 마지막으로 번역 요청 삭제
         translationRepository.delete(translation);
     }
 
@@ -473,7 +479,7 @@ public class TranslationService {
                 );
 
         if (!translation.getMember().getId().equals(memberId)) {
-            throw new IllegalArgumentException(
+            throw new AccessDeniedException(
                     "해당 회원의 번역 기록이 아닙니다."
             );
         }

@@ -43,7 +43,7 @@ public class TranslationController {
     }
 
     // 번역 기록 상세 조회
-    // URL 예시 : GET /api/translations/1
+    // GET /api/translations/member/{memberId}/{id}
     @GetMapping("/member/{memberId}/{id}")
     public ResponseEntity<TranslationDetailResponse> getTranslationDetail(
             @PathVariable Long memberId,
@@ -55,7 +55,7 @@ public class TranslationController {
     }
 
     // 번역 기록 삭제
-    // URL 예시: DELETE /api/translations/1
+    // DELETE /api/translations/member/{memberId}/{id}
     @DeleteMapping("/member/{memberId}/{id}")
     public ResponseEntity<Void> deleteTranslation(
             @PathVariable Long memberId,
@@ -67,7 +67,7 @@ public class TranslationController {
     }
 
     // 번역 기록 메모 저장 또는 수정
-    // PUT /api/translations/{id}/memo
+    // PUT /api/translations/member/{memberId}/{id}/memo
     @PutMapping("/member/{memberId}/{id}/memo")
     public ResponseEntity<TranslationMemoResponse> saveOrUpdateMemo(
             @PathVariable Long memberId,

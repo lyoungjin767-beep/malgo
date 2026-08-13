@@ -2,6 +2,7 @@ package com.malgo.backend.service;
 
 import com.malgo.backend.dto.AiPartnerResponse;
 import com.malgo.backend.entity.Conversation;
+import com.malgo.backend.exception.AccessDeniedException;
 import com.malgo.backend.repository.AiPartnerRepository;
 import com.malgo.backend.repository.ConversationRepository;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,12 @@ public class AiPartnerService {
     // 기본 AI + 해당 회원이 만든 커스텀 AI 목록 조회
     @Transactional(readOnly = true)
     public List<AiPartnerResponse> getPartners(Long memberId) {
+
+        if (!memberRepository.existsById(memberId)) {
+            throw new IllegalArgumentException(
+                    "회원을 찾을 수 없습니다. id=" + memberId
+            );
+        }
 
         return aiPartnerRepository.findByMemberIdOrMemberIsNull(memberId)
                 .stream()
@@ -181,7 +188,7 @@ public class AiPartnerService {
         if (partner.isCustom()) {
             if (partner.getMember() == null
                     || !partner.getMember().getId().equals(memberId)) {
-                throw new IllegalArgumentException(
+                throw new AccessDeniedException(
                         "해당 회원의 AI 상대가 아닙니다."
                 );
             }
@@ -215,7 +222,7 @@ public class AiPartnerService {
 
         // 기본 제공 AI는 회원 소유가 아님
         if (!partner.isCustom()) {
-            throw new IllegalArgumentException(
+            throw new AccessDeniedException(
                     "기본 AI 상대는 수정하거나 삭제할 수 없습니다."
             );
         }
@@ -224,7 +231,7 @@ public class AiPartnerService {
         if (partner.getMember() == null
                 || !partner.getMember().getId().equals(memberId)) {
 
-            throw new IllegalArgumentException(
+            throw new AccessDeniedException(
                     "해당 회원의 AI 상대가 아닙니다."
             );
         }

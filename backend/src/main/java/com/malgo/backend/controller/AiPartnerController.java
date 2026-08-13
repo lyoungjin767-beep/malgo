@@ -27,7 +27,7 @@ public class AiPartnerController {
     }
 
     // 기본 AI + 해당 회원이 만든 커스텀 AI 목록 조회
-// GET /api/partners/member/{memberId}
+    // GET /api/partners/member/{memberId}
     @GetMapping("/member/{memberId}")
     public ResponseEntity<List<AiPartnerResponse>> getPartners(
             @PathVariable Long memberId
@@ -39,7 +39,7 @@ public class AiPartnerController {
     }
 
     // 커스텀 AI 상대 생성
-    // POST /api/partners
+    // POST /api/partners/member/{memberId}
     @PostMapping("/member/{memberId}")
     public ResponseEntity<AiPartnerResponse> createCustomPartner(
             @PathVariable Long memberId,
@@ -55,7 +55,7 @@ public class AiPartnerController {
 
 
     // 커스텀 AI 상대 수정
-    // PUT /api/partners/{id}
+    // PUT /api/partners/member/{memberId}/{id}
     @PutMapping("/member/{memberId}/{id}")
     public ResponseEntity<AiPartnerResponse> updatePartner(
             @PathVariable Long memberId,
@@ -68,7 +68,7 @@ public class AiPartnerController {
     }
 
     // 커스텀 AI 상대 삭제
-    // DELETE /api/partners/{id}
+    // DELETE /api/partners/member/{memberId}/{id}
     @DeleteMapping("/member/{memberId}/{id}")
     public ResponseEntity<Void> deletePartner(
             @PathVariable Long memberId,
@@ -81,7 +81,7 @@ public class AiPartnerController {
     }
 
     // AI 상대 상세 조회
-    // GET /api/partners/{id}
+    // GET /api/partners/member/{memberId}/{id}
     @GetMapping("/member/{memberId}/{id}")
     public ResponseEntity<AiPartnerResponse> getPartner(
             @PathVariable Long memberId,
