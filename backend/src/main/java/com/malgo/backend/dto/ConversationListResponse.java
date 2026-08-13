@@ -11,6 +11,7 @@ public record ConversationListResponse(
         String targetCountry,
         String relationshipType,
         String situation,
+        String field,
         String lastMessage,
         LocalDateTime updatedAt
 ) {

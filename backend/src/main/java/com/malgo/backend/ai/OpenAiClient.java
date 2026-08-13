@@ -68,6 +68,7 @@ public class OpenAiClient {
             String speechStyle,
             String characteristic,
             String situation,
+            String field,
             String userMessage
     ) {
 
@@ -83,6 +84,7 @@ public class OpenAiClient {
             상대방 말투/스타일: %s
             상대방 특징: %s
             현재 상황: %s
+            업무 분야: %s
 
             사용자 메시지:
             %s
@@ -90,11 +92,14 @@ public class OpenAiClient {
             응답 규칙:
             - 사용자가 어떤 표현을 어떻게 말하면 좋을지 묻는 경우 실제 사용할 수 있는 표현을 추천한다.
             - 대상 국가와 관계를 고려한다.
+            - 선택한 업무 분야에 맞는 자연스러운 전문 용어와 표현을 사용한다.
             - 사용자의 의도를 임의로 바꾸지 않는다.
             - 원문에 없는 구체적인 사실을 만들어내지 않는다.
             - 답변은 한국어로 설명한다.
             - 필요하면 추천 번역 문장을 함께 제공한다.
-            - 너무 길게 설명하지 말고 실제 채팅처럼 자연스럽게 답한다.
+            - 여러 개의 템플릿이나 긴 목록을 제시하지 않는다.
+            - 가장 적절한 표현 1개를 우선 추천한다.
+            - 답변은 핵심만 3~5문장 정도로 짧고 자연스럽게 작성한다.
             """
                 .formatted(
                         partnerName,
@@ -103,6 +108,7 @@ public class OpenAiClient {
                         speechStyle,
                         characteristic == null ? "별도 정보 없음" : characteristic,
                         situation,
+                        field,
                         userMessage
                 );
 

@@ -92,7 +92,8 @@ public class ConversationService {
         Conversation conversation = new Conversation(
                 member,
                 partner,
-                request.situation()
+                request.situation(),
+                request.field()
         );
 
         Conversation saved =
@@ -102,7 +103,8 @@ public class ConversationService {
                 saved.getId(),
                 partner.getId(),
                 partner.getName(),
-                saved.getSituation()
+                saved.getSituation(),
+                saved.getField()
         );
     }
 
@@ -142,6 +144,7 @@ public class ConversationService {
                 partner.getSpeechStyle(),
                 partner.getCharacteristic(),
                 conversation.getSituation(),
+                conversation.getField(),
                 request.content()
         );
 
@@ -381,6 +384,7 @@ public class ConversationService {
                 partner.getTargetCountry(),
                 partner.getRelationshipType(),
                 conversation.getSituation(),
+                conversation.getField(),
                 conversation.getCreatedAt(),
                 conversation.getUpdatedAt(),
                 messages
@@ -421,7 +425,7 @@ public class ConversationService {
 
         // 회원 존재 여부 확인
         if (!memberRepository.existsById(memberId)) {
-            throw new IllegalStateException(
+            throw new IllegalArgumentException(
                     "회원을 찾을 수 없습니다. id=" + memberId
             );
         }
@@ -449,6 +453,7 @@ public class ConversationService {
                             partner.getTargetCountry(),
                             partner.getRelationshipType(),
                             conversation.getSituation(),
+                            conversation.getField(),
                             lastMessage,
                             conversation.getUpdatedAt()
                     );

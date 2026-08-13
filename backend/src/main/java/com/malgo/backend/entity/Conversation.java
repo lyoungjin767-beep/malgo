@@ -31,6 +31,11 @@ public class Conversation {
     @Column(length = 30)
     private String situation;
 
+    // 사용자가 선택한 업무 분야
+    // 예: IT_DEVELOPMENT, DESIGN, MARKETING, SALES, FINANCE
+    @Column(length = 30)
+    private String field;
+
     // 대화가 시작된 시간
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -45,11 +50,13 @@ public class Conversation {
     public Conversation(
             Member member,
             AiPartner aiPartner,
-            String situation
+            String situation,
+            String field
     ) {
         this.member = member;
         this.aiPartner = aiPartner;
         this.situation = situation;
+        this.field = field;
     }
 
     // 대화방을 처음 저장할 때 생성 시간과 수정 시간을 자동으로 설정
@@ -78,6 +85,8 @@ public class Conversation {
     public String getSituation() {
         return situation;
     }
+
+    public String getField(){return field;}
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

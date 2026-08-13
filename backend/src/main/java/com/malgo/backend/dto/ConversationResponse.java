@@ -6,6 +6,7 @@ public record ConversationResponse(
         Long id,
         Long aiPartnerId,
         String aiPartnerName,
-        String situation
+        String situation,
+        String field
 ) {
 }

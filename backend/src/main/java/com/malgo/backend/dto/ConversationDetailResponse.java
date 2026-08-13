@@ -13,6 +13,7 @@ public record ConversationDetailResponse(
         String targetCountry,
         String relationshipType,
         String situation,
+        String field,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         List<ConversationMessageResponse> messages
