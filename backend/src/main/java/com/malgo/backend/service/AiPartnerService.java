@@ -154,6 +154,7 @@ public class AiPartnerService {
         // 연결된 대화방과 메시지/요약 먼저 삭제
         for (Conversation conversation : conversations) {
             conversationService.deleteConversation(
+                    memberId,
                     conversation.getId()
             );
         }

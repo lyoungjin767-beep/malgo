@@ -96,18 +96,14 @@ public class ConversationService {
     // 사용자의 메시지를 저장하고 AI 상대 정보를 이용해 OpenAI 응답을 생성한 뒤 AI 응답까지 자동으로 저장
     @Transactional
     public ConversationChatResponse sendMessage(
+            Long memberId,
             Long conversationId,
             ConversationMessageRequest request
     ) {
 
         // 1. 대화방 조회
         Conversation conversation =
-                conversationRepository.findById(conversationId)
-                        .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "대화방을 찾을 수 없습니다. id=" + conversationId
-                                )
-                        );
+                getOwnedConversation(memberId, conversationId);
 
         AiPartner partner = conversation.getAiPartner();
 
@@ -167,14 +163,11 @@ public class ConversationService {
     // 특정 대화방의 메시지를 오래된 순서부터 조회
     @Transactional(readOnly = true)
     public List<ConversationMessageResponse> getMessages(
+            Long memberId,
             Long conversationId
     ) {
-        // 존재하지 않는 대화방인지 먼저 확인
-        if (!conversationRepository.existsById(conversationId)) {
-            throw new IllegalArgumentException(
-                    "대화방을 찾을 수 없습니다. id=" + conversationId
-            );
-        }
+        // 해당 회원의 대화방인지 확인
+        getOwnedConversation(memberId, conversationId);
 
         return messageRepository
                 .findByConversationIdOrderByCreatedAtAsc(conversationId)
@@ -191,16 +184,13 @@ public class ConversationService {
     // 특정 대화방의 전체 메시지를 가져와 OpenAI를 이용해 대화 내용을 요약
     @Transactional
     public ConversationSummaryResponse summarizeConversation(
+            Long memberId,
             Long conversationId
     ) {
 
-        // 1. 대화방 존재 여부 확인
-        Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "대화방을 찾을 수 없습니다. id=" + conversationId
-                        )
-                );
+        // 해당 회원의 대화방인지 확인
+        Conversation conversation =
+                getOwnedConversation(memberId, conversationId);
 
         // 2. 해당 대화방의 메시지를 시간순으로 조회
         List<ConversationMessage> messages =
@@ -249,14 +239,12 @@ public class ConversationService {
     // 특정 대화방에 저장된 요약 기록을 최신순으로 조회
     @Transactional(readOnly = true)
     public List<ConversationSummaryResponse> getConversationSummaries(
+            Long memberId,
             Long conversationId
     ) {
 
-        if (!conversationRepository.existsById(conversationId)) {
-            throw new IllegalArgumentException(
-                    "대화방을 찾을 수 없습니다. id=" + conversationId
-            );
-        }
+        // 해당 회원의 대화방인지 확인
+        getOwnedConversation(memberId, conversationId);
 
         return summaryRepository
                 .findByConversationIdOrderByCreatedAtDesc(conversationId)
@@ -270,51 +258,12 @@ public class ConversationService {
                 .toList();
     }
 
-    // 저장된 대화방을 최근 활동 순서로 조회
-    @Transactional(readOnly = true)
-    public List<ConversationListResponse> getConversations() {
-
-        return conversationRepository
-                .findAllByOrderByUpdatedAtDesc()
-                .stream()
-                .map(conversation -> {
-
-                    AiPartner partner =
-                            conversation.getAiPartner();
-
-                    // 대화방의 가장 최근 메시지 조회
-                    String lastMessage =
-                            messageRepository
-                                    .findFirstByConversationIdOrderByCreatedAtDesc(
-                                            conversation.getId()
-                                    )
-                                    .map(ConversationMessage::getContent)
-                                    .orElse(null);
-
-                    return new ConversationListResponse(
-                            conversation.getId(),
-                            partner.getId(),
-                            partner.getName(),
-                            partner.getTargetCountry(),
-                            partner.getRelationshipType(),
-                            conversation.getSituation(),
-                            lastMessage,
-                            conversation.getUpdatedAt()
-                    );
-                })
-                .toList();
-    }
-
     // 대화방과 연결된 메시지/요약을 함께 삭제
     @Transactional
-    public void deleteConversation(Long conversationId) {
+    public void deleteConversation(Long memberId, Long conversationId) {
 
-        Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "대화방을 찾을 수 없습니다. id=" + conversationId
-                        )
-                );
+        Conversation conversation =
+                getOwnedConversation(memberId, conversationId);
 
         // FK 제약 때문에 자식 데이터부터 삭제
         messageRepository.deleteByConversationId(conversationId);
@@ -328,10 +277,11 @@ public class ConversationService {
     // 예: BUSINESS -> 3, DAILY -> 2
     //전체 대화 수를 기준으로 비율도 함께 계산
     @Transactional(readOnly = true)
-    public ConversationStatisticsResponse getConversationStatistics() {
+    public ConversationStatisticsResponse getConversationStatistics(Long memberId) {
 
         List<Conversation> conversations =
-                conversationRepository.findAll();
+                conversationRepository
+                        .findByMemberIdOrderByUpdatedAtDesc(memberId);
 
         long totalCount = conversations.size();
 
@@ -379,17 +329,12 @@ public class ConversationService {
     // AI 상대 정보와 저장된 메시지를 함께 반환
     @Transactional(readOnly = true)
     public ConversationDetailResponse getConversationDetail(
+            Long memberId,
             Long conversationId
     ) {
 
-        // 1. 대화방 조회
         Conversation conversation =
-                conversationRepository.findById(conversationId)
-                        .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "대화방을 찾을 수 없습니다. id=" + conversationId
-                                )
-                        );
+                getOwnedConversation(memberId, conversationId);
 
         // 2. 연결된 AI 상대 정보
         AiPartner partner = conversation.getAiPartner();
@@ -426,14 +371,11 @@ public class ConversationService {
     // 특정 대화방의 가장 최근 요약 1건을 조회
     @Transactional(readOnly = true)
     public ConversationSummaryResponse getLatestConversationSummary(
+            Long memberId,
             Long conversationId
     ) {
-
-        if (!conversationRepository.existsById(conversationId)) {
-            throw new IllegalArgumentException(
-                    "대화방을 찾을 수 없습니다. id=" + conversationId
-            );
-        }
+        // 해당 회원의 대화방인지 확인
+        getOwnedConversation(memberId, conversationId);
 
         ConversationSummary summary =
                 summaryRepository
@@ -493,5 +435,27 @@ public class ConversationService {
                     );
                 })
                 .toList();
+    }
+
+    private Conversation getOwnedConversation(
+            Long memberId,
+            Long conversationId
+    ) {
+
+        Conversation conversation =
+                conversationRepository.findById(conversationId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "대화방을 찾을 수 없습니다. id=" + conversationId
+                                )
+                        );
+
+        if (!conversation.getMember().getId().equals(memberId)) {
+            throw new IllegalArgumentException(
+                    "해당 회원의 대화방이 아닙니다."
+            );
+        }
+
+        return conversation;
     }
 }

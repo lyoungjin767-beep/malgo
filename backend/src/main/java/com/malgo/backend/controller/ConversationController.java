@@ -40,101 +40,98 @@ public class ConversationController {
     // 사용자 메시지를 전송하고 AI 응답을 자동 생성
     // POST /api/conversations/{id}/messages
 
-    @PostMapping("/{id}/messages")
+    @PostMapping("member/{memberId}/{id}/messages")
     public ResponseEntity<ConversationChatResponse> sendMessage(
+            @PathVariable Long memberId,
             @PathVariable Long id,
             @Valid @RequestBody ConversationMessageRequest request
     ) {
         return ResponseEntity.ok(
-                conversationService.sendMessage(id, request)
+                conversationService.sendMessage(memberId, id, request)
         );
     }
 
     // 대화방 메시지 조회
     // GET /api/conversations/{id}/messages
 
-    @GetMapping("/{id}/messages")
+    @GetMapping("/member/{memberId}/{id}/messages")
     public ResponseEntity<List<ConversationMessageResponse>> getMessages(
+            @PathVariable Long memberId,
             @PathVariable Long id
     ) {
         return ResponseEntity.ok(
-                conversationService.getMessages(id)
+                conversationService.getMessages(memberId, id)
         );
     }
 
     // 대화 내용 요약
     // POST /api/conversations/{id}/summary
-    @PostMapping("/{id}/summary")
+    @PostMapping("/member/{memberId}/{id}/summary")
     public ResponseEntity<ConversationSummaryResponse> summarizeConversation(
+            @PathVariable Long memberId,
             @PathVariable Long id
     ) {
         return ResponseEntity.ok(
-                conversationService.summarizeConversation(id)
+                conversationService.summarizeConversation(memberId, id)
         );
     }
 
     // 저장된 대화 요약 목록 조회
     // GET /api/conversations/{id}/summaries
-    @GetMapping("/{id}/summaries")
+    @GetMapping("/member/{memberId}/{id}/summaries")
     public ResponseEntity<List<ConversationSummaryResponse>> getConversationSummaries(
+            @PathVariable Long memberId,
             @PathVariable Long id
     ) {
         return ResponseEntity.ok(
-                conversationService.getConversationSummaries(id)
-        );
-    }
-
-    // 대화방 목록 조회
-    // GET /api/conversations
-    @GetMapping
-    public ResponseEntity<List<ConversationListResponse>> getConversations() {
-
-        return ResponseEntity.ok(
-                conversationService.getConversations()
+                conversationService.getConversationSummaries(memberId, id)
         );
     }
 
     // 대화방 삭제
     // DELETE /api/conversations/{id}
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/member/{memberId}/{id}")
     public ResponseEntity<Void> deleteConversation(
+            @PathVariable Long memberId,
             @PathVariable Long id
     ) {
-        conversationService.deleteConversation(id);
+        conversationService.deleteConversation(memberId, id);
 
         return ResponseEntity.noContent().build();
     }
 
     // 마이페이지 분야별 대화 통계 조회
     // GET /api/conversations/statistics
-    @GetMapping("/statistics")
+    @GetMapping("/member/{memberId}/statistics")
     public ResponseEntity<ConversationStatisticsResponse>
-    getConversationStatistics() {
+    getConversationStatistics(@PathVariable Long memberId) {
 
         return ResponseEntity.ok(
-                conversationService.getConversationStatistics()
+                conversationService.getConversationStatistics(memberId)
         );
     }
 
     // 대화방 상세 조회
     // GET /api/conversations/{id}
-    @GetMapping("/{id}")
+    @GetMapping("/member/{memberId}/{id}")
     public ResponseEntity<ConversationDetailResponse> getConversationDetail(
+            @PathVariable Long memberId,
             @PathVariable Long id
     ) {
         return ResponseEntity.ok(
-                conversationService.getConversationDetail(id)
+                conversationService.getConversationDetail(memberId, id)
         );
     }
 
     // 가장 최근 대화 요약 조회
     // GET /api/conversations/{id}/summary/latest
-    @GetMapping("/{id}/summary/latest")
+    @GetMapping("/member/{memberId}/{id}/summary/latest")
     public ResponseEntity<ConversationSummaryResponse> getLatestConversationSummary(
+            @PathVariable Long memberId,
             @PathVariable Long id
     ) {
         return ResponseEntity.ok(
-                conversationService.getLatestConversationSummary(id)
+                conversationService.getLatestConversationSummary(memberId, id)
         );
     }
 
