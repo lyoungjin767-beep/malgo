@@ -13,4 +13,6 @@ public interface ConversationRepository
     List<Conversation> findAllByOrderByUpdatedAtDesc();
 
     List<Conversation> findByAiPartnerId(Long aiPartnerId);
+
+    List<Conversation> findByMemberIdOrderByUpdatedAtDesc(Long memberId);
 }

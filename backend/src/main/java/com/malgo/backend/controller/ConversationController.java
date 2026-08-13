@@ -137,4 +137,15 @@ public class ConversationController {
                 conversationService.getLatestConversationSummary(id)
         );
     }
+
+    // 특정 회원의 대화방 목록 조회
+    // GET /api/conversations/member/{memberId}
+    @GetMapping("/member/{memberId}")
+    public ResponseEntity<List<ConversationListResponse>> getConversationsByMember(
+            @PathVariable Long memberId
+    ) {
+        return ResponseEntity.ok(
+                conversationService.getConversationsByMember(memberId)
+        );
+    }
 }

@@ -1,6 +1,7 @@
 package com.malgo.backend.entity;
 
 import jakarta.persistence.*;
+import com.malgo.backend.member.entity.Member;
 
 import java.time.LocalDateTime;
 
@@ -20,6 +21,11 @@ public class Conversation {
     @JoinColumn(name = "ai_partner_id", nullable = false)
     private AiPartner aiPartner;
 
+    // 어떤 회원의 대화방인지 연결
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
+
     // 대화의 주제 또는 상황
     // 예: BUSINESS, DAILY, TRAVEL 등
     @Column(length = 30)
@@ -37,9 +43,11 @@ public class Conversation {
     }
 
     public Conversation(
+            Member member,
             AiPartner aiPartner,
             String situation
     ) {
+        this.member = member;
         this.aiPartner = aiPartner;
         this.situation = situation;
     }
@@ -77,6 +85,10 @@ public class Conversation {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public Member getMember() {
+        return member;
     }
 
     // 새로운 메시지가 생성됐을 때

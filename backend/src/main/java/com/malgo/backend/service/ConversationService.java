@@ -21,6 +21,8 @@ import com.malgo.backend.repository.ConversationSummaryRepository;
 import com.malgo.backend.dto.ConversationListResponse;
 import com.malgo.backend.dto.ConversationStatisticsResponse;
 import com.malgo.backend.dto.ConversationDetailResponse;
+import com.malgo.backend.member.entity.Member;
+import com.malgo.backend.member.repository.MemberRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,19 +39,22 @@ public class ConversationService {
     private final AiPartnerRepository aiPartnerRepository;
     private final OpenAiClient openAiClient;
     private final ConversationSummaryRepository summaryRepository;
+    private final MemberRepository memberRepository;
 
     public ConversationService(
             ConversationRepository conversationRepository,
             ConversationMessageRepository messageRepository,
             AiPartnerRepository aiPartnerRepository,
             OpenAiClient openAiClient,
-            ConversationSummaryRepository summaryRepository
+            ConversationSummaryRepository summaryRepository,
+            MemberRepository memberRepository
     ) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
         this.aiPartnerRepository = aiPartnerRepository;
         this.openAiClient = openAiClient;
         this.summaryRepository = summaryRepository;
+        this.memberRepository = memberRepository;
     }
 
     // 선택한 AI 상대를 기준으로 새 대화방을 생성
@@ -57,6 +62,13 @@ public class ConversationService {
     public ConversationResponse createConversation(
             ConversationCreateRequest request
     ) {
+        Member member = memberRepository.findById(request.memberId())
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "회원을 찾을 수 없습니다. id=" + request.memberId()
+                        )
+                );
+
         AiPartner partner = aiPartnerRepository.findById(request.aiPartnerId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
@@ -65,6 +77,7 @@ public class ConversationService {
                 );
 
         Conversation conversation = new Conversation(
+                member,
                 partner,
                 request.situation()
         );
@@ -437,5 +450,48 @@ public class ConversationService {
                 summary.getSummary(),
                 summary.getCreatedAt()
         );
+    }
+
+    // 특정 회원의 대화방을 최근 활동 순서로 조회
+    @Transactional(readOnly = true)
+    public List<ConversationListResponse> getConversationsByMember(
+            Long memberId
+    ) {
+
+        // 회원 존재 여부 확인
+        if (!memberRepository.existsById(memberId)) {
+            throw new IllegalArgumentException(
+                    "회원을 찾을 수 없습니다. id=" + memberId
+            );
+        }
+
+        return conversationRepository
+                .findByMemberIdOrderByUpdatedAtDesc(memberId)
+                .stream()
+                .map(conversation -> {
+
+                    AiPartner partner = conversation.getAiPartner();
+
+                    // 해당 대화방의 가장 최근 메시지 조회
+                    String lastMessage =
+                            messageRepository
+                                    .findFirstByConversationIdOrderByCreatedAtDesc(
+                                            conversation.getId()
+                                    )
+                                    .map(ConversationMessage::getContent)
+                                    .orElse(null);
+
+                    return new ConversationListResponse(
+                            conversation.getId(),
+                            partner.getId(),
+                            partner.getName(),
+                            partner.getTargetCountry(),
+                            partner.getRelationshipType(),
+                            conversation.getSituation(),
+                            lastMessage,
+                            conversation.getUpdatedAt()
+                    );
+                })
+                .toList();
     }
 }

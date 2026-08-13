@@ -12,4 +12,6 @@ public interface TranslationRepository
     // Spring Data JPA가 메서드 이름을 분석해 createdAt DESC 조건의 쿼리를 자동 생성
 
     List<Translation> findAllByOrderByCreatedAtDesc();
+
+    List<Translation> findByMemberIdOrderByCreatedAtDesc(Long memberId);
 }

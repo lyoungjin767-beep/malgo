@@ -29,14 +29,15 @@ public class TranslationController {
         return ResponseEntity.ok(response);
     }
 
-    // 저장된 번역 기록 목록을 조회
-    // GET /api/translations -> RequestMapping이 있기 때문에
-
-    @GetMapping
-    public ResponseEntity<List<TranslationHistoryResponse>> getTranslationHistory() {
+    // 특정 회원의 저장된 번역 기록 목록 조회
+    // GET /api/translations/member/{memberId}
+    @GetMapping("/member/{memberId}")
+    public ResponseEntity<List<TranslationHistoryResponse>> getTranslationHistory(
+            @PathVariable Long memberId
+    ) {
 
         List<TranslationHistoryResponse> history =
-                translationService.getTranslationHistory();
+                translationService.getTranslationHistory(memberId);
 
         return ResponseEntity.ok(history);
     }
@@ -94,14 +95,16 @@ public class TranslationController {
         );
     }
 
-    // 마이페이지 최근 번역 기록 조회
-    // GET /api/translations/recent
-    @GetMapping("/recent")
+    // 특정 회원의 마이페이지 최근 번역 기록 조회
+    // GET /api/translations/member/{memberId}/recent
+    @GetMapping("/member/{memberId}/recent")
     public ResponseEntity<List<MyPageTranslationResponse>>
-    getRecentTranslations() {
+    getRecentTranslations(
+            @PathVariable Long memberId
+    ) {
 
         return ResponseEntity.ok(
-                translationService.getMyPageTranslations()
+                translationService.getMyPageTranslations(memberId)
         );
     }
 

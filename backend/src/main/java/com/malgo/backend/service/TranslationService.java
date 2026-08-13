@@ -21,6 +21,8 @@ import com.malgo.backend.entity.TranslationMemo;
 import com.malgo.backend.repository.TranslationMemoRepository;
 import com.malgo.backend.dto.MyPageTranslationResponse;
 import com.malgo.backend.dto.TranslationStatisticsResponse;
+import com.malgo.backend.member.entity.Member;
+import com.malgo.backend.member.repository.MemberRepository;
 
 import java.util.List;
 import java.util.Map;
@@ -34,19 +36,22 @@ public class TranslationService {
     private final CultureWarningRepository cultureWarningRepository;
     private final OpenAiClient openAiClient;
     private final TranslationMemoRepository translationMemoRepository;
+    private final MemberRepository memberRepository;
 
     public TranslationService(
             TranslationRepository translationRepository,
             TranslationResultRepository translationResultRepository,
             CultureWarningRepository cultureWarningRepository,
             OpenAiClient openAiClient,
-            TranslationMemoRepository translationMemoRepository
+            TranslationMemoRepository translationMemoRepository,
+            MemberRepository memberRepository
     ) {
         this.translationRepository = translationRepository;
         this.translationResultRepository = translationResultRepository;
         this.cultureWarningRepository = cultureWarningRepository;
         this.openAiClient = openAiClient;
         this.translationMemoRepository = translationMemoRepository;
+        this.memberRepository = memberRepository;
     }
 
 
@@ -61,8 +66,16 @@ public class TranslationService {
     @Transactional
     public TranslationResponse analyze(TranslationRequest request) {
 
+        Member member = memberRepository.findById(request.memberId())
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "회원을 찾을 수 없습니다. id=" + request.memberId()
+                        )
+                );
+
         // 1. 사용자가 입력한 원문과 상황 정보를 translations 테이블에 저장
         Translation translation = new Translation(
+                member,
                 request.originalText(),
                 request.sourceLanguage(),
                 request.targetLanguage(),
@@ -123,14 +136,21 @@ public class TranslationService {
         return response;
     }
 
-    // 저장된 번역 기록을 최신순으로 조회
-    // Entity를 그대로 반환하지 않고 DTO로 변환
-    // 프론트에 필요한 정보만 전달
-
+    // 특정 회원의 저장된 번역 기록을 최신순으로 조회
     @Transactional(readOnly = true)
-    public List<TranslationHistoryResponse> getTranslationHistory() {
+    public List<TranslationHistoryResponse> getTranslationHistory(
+            Long memberId
+    ) {
 
-        return translationRepository.findAllByOrderByCreatedAtDesc()
+        // 회원 존재 여부 확인
+        if (!memberRepository.existsById(memberId)) {
+            throw new IllegalArgumentException(
+                    "회원을 찾을 수 없습니다. id=" + memberId
+            );
+        }
+
+        return translationRepository
+                .findByMemberIdOrderByCreatedAtDesc(memberId)
                 .stream()
                 .map(translation -> new TranslationHistoryResponse(
                         translation.getId(),
@@ -335,19 +355,23 @@ public class TranslationService {
         );
     }
 
-    // 마이페이지에 표시할 최근 번역 기록을 조회한다.
+    // 특정 회원의 마이페이지 최근 번역 기록 조회
     // 원문, 추천 번역, 번역 날짜, 메모 존재 여부를 함께 반환
     @Transactional(readOnly = true)
-    public List<MyPageTranslationResponse> getMyPageTranslations() {
+    public List<MyPageTranslationResponse> getMyPageTranslations(
+            Long memberId
+    ) {
 
-        return translationRepository.findAll()
+        // 회원 존재 여부 확인
+        if (!memberRepository.existsById(memberId)) {
+            throw new IllegalArgumentException(
+                    "회원을 찾을 수 없습니다. id=" + memberId
+            );
+        }
+
+        return translationRepository
+                .findByMemberIdOrderByCreatedAtDesc(memberId)
                 .stream()
-
-                // 최신 번역이 위에 나오도록 정렬
-                .sorted((a, b) ->
-                        b.getCreatedAt().compareTo(a.getCreatedAt())
-                )
-
                 .map(translation -> {
 
                     // 해당 번역의 AI 분석 결과 조회
@@ -371,15 +395,11 @@ public class TranslationService {
                     return new MyPageTranslationResponse(
                             translation.getId(),
                             translation.getOriginalText(),
-
-                            // 디자인의 '추천 번역'
                             result.getCulturalTranslation(),
-
                             translation.getCreatedAt(),
                             hasMemo
                     );
                 })
-
                 .filter(Objects::nonNull)
                 .toList();
     }

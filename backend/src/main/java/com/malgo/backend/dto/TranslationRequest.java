@@ -1,9 +1,13 @@
 package com.malgo.backend.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 // 요청 DTO
 public record TranslationRequest(
+        @NotNull(message = "회원 ID는 필수입니다.")
+        Long memberId,
+
         @NotBlank(message = "원문은 필수입니다.")
         String originalText,
 

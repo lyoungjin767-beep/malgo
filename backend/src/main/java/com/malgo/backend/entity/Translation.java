@@ -1,7 +1,7 @@
 package com.malgo.backend.entity;
 
 import jakarta.persistence.*;
-
+import com.malgo.backend.member.entity.Member;
 import java.time.LocalDateTime;
 
 @Entity
@@ -11,6 +11,11 @@ public class Translation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    // 어떤 회원의 번역 기록인지 연결
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String originalText;
@@ -43,6 +48,7 @@ public class Translation {
     }
 
     public Translation(
+            Member member,
             String originalText,
             String sourceLanguage,
             String targetLanguage,
@@ -52,6 +58,7 @@ public class Translation {
             String communicationPurpose,
             String requestedTone
     ) {
+        this.member = member;
         this.originalText = originalText;
         this.sourceLanguage = sourceLanguage;
         this.targetLanguage = targetLanguage;
@@ -69,6 +76,10 @@ public class Translation {
 
     public Long getId() {
         return id;
+    }
+
+    public Member getMember() {
+        return member;
     }
 
     // 번역 기록 DTO를 만들 때 필요한 값들을 조회
