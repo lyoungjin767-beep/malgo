@@ -17,26 +17,18 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 100)
-    private String email;
+    @Column(nullable = false, unique = true, length = 10)
+    private String username;
 
     @Column(nullable = false, length = 255)
     private String password;
 
-    @Column(nullable = false, length = 30)
-    private String name;
-
-    @Column(name = "email_verified", nullable = false)
-    private boolean emailVerified;
-
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    public Member(String email, String password, String name) {
-        this.email = email;
+    public Member(String username, String password) {
+        this.username = username;
         this.password = password;
-        this.name = name;
-        this.emailVerified = true;
         this.createdAt = LocalDateTime.now();
     }
 
