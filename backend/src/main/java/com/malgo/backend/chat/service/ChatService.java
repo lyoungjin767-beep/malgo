@@ -5,6 +5,7 @@ import com.openai.client.okhttp.OpenAIOkHttpClient;
 import com.openai.models.ChatModel;
 import com.openai.models.responses.Response;
 import com.openai.models.responses.ResponseCreateParams;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,8 +13,12 @@ public class ChatService {
 
     private final OpenAIClient client;
 
-    public ChatService() {
-        this.client = OpenAIOkHttpClient.fromEnv();
+    public ChatService(
+            @Value("${openai.api-key}") String apiKey
+    ) {
+        this.client = OpenAIOkHttpClient.builder()
+                .apiKey(apiKey)
+                .build();
     }
 
     public String chat(String message) {
