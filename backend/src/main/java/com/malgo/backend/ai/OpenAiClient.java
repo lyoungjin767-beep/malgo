@@ -6,6 +6,7 @@ import com.malgo.backend.dto.TranslationResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import com.malgo.backend.dto.ConversationAiResult;
 
 import java.util.List;
 import java.util.Map;
@@ -236,6 +237,125 @@ public class OpenAiClient {
                 .body(Map.class);
 
         return extractOutputText(response);
+    }
+
+    public ConversationAiResult analyzeConversationResponse(
+            String targetCountry,
+            String relationshipType,
+            String situation,
+            String field,
+            String userMessage,
+            String aiResponse
+    ) {
+
+        String prompt = """
+            너는 Malgo의 글로벌 커뮤니케이션 분석 도우미다.
+
+            사용자의 원래 메시지와 Malgo AI가 생성한 답변을 보고
+            아래 5가지 항목을 각각 0부터 100 사이의 정수로 평가하라.
+
+            대상 국가: %s
+            사용자와 상대방의 관계: %s
+            현재 상황: %s
+            업무 분야: %s
+
+            사용자 메시지:
+            %s
+
+            Malgo AI 답변:
+            %s
+            
+            recommendedTranslation
+            - Malgo AI 답변 안에서 사용자가 실제 상대방에게 보낼 수 있는 핵심 추천 표현만 추출한다.
+            - 설명, 팁, 의미, 맥락은 포함하지 않는다.
+            - 따옴표나 화살표 같은 장식은 제거하고 실제 문장만 반환한다.
+            - 여러 추천 표현이 있다면 가장 대표적인 표현 하나만 반환한다.
+
+            평가 기준:
+
+            requestClarity
+            - 행동이나 요청 사항이 얼마나 명확하게 전달되는지 평가한다.
+            - 요청이 없는 문장이라면 의도가 얼마나 명확한지를 평가한다.
+            - 명확할수록 높은 점수를 준다.
+
+            businessTone
+            - 현재 상황과 관계에서 비즈니스 커뮤니케이션 톤이 얼마나 적절한지 평가한다.
+            - 일상 상황에서는 무조건 격식 있는 표현에 높은 점수를 주지 않는다.
+
+            intentDelivery
+            - 사용자가 전달하려는 핵심 의도와 감정이 얼마나 정확하게 전달되는지 평가한다.
+            - 정확할수록 높은 점수를 준다.
+
+            culturalAppropriateness
+            - 대상 국가와 관계, 상황을 고려했을 때 표현이 얼마나 자연스럽고 적절한지 평가한다.
+            - 적절할수록 높은 점수를 준다.
+            - 특정 국가의 모든 사람이 동일하다고 단정하지 않는다.
+
+            ambiguity
+            - 표현에 여러 의미로 해석될 여지가 얼마나 있는지 평가한다.
+            - 모호할수록 높은 점수를 준다.
+            - 명확할수록 낮은 점수를 준다.
+            """
+                .formatted(
+                        targetCountry,
+                        relationshipType,
+                        situation,
+                        field,
+                        userMessage,
+                        aiResponse
+                );
+
+        Map<String, Object> properties = Map.of(
+                "recommendedTranslation", Map.of(
+                        "type", "string"
+                ),
+                "requestClarity", scoreSchema(),
+                "businessTone", scoreSchema(),
+                "intentDelivery", scoreSchema(),
+                "culturalAppropriateness", scoreSchema(),
+                "ambiguity", scoreSchema()
+        );
+
+        Map<String, Object> responseFormat = Map.of(
+                "type", "json_schema",
+                "name", "conversation_response_analysis",
+                "strict", true,
+                "schema", Map.of(
+                        "type", "object",
+                        "properties", properties,
+                        "required", List.copyOf(properties.keySet()),
+                        "additionalProperties", false
+                )
+        );
+
+        Map<String, Object> body = Map.of(
+                "model", model,
+                "input", prompt,
+                "text", Map.of(
+                        "format", responseFormat
+                )
+        );
+
+        Map<?, ?> response = restClient.post()
+                .uri("/responses")
+                .body(body)
+                .retrieve()
+                .body(Map.class);
+
+        String outputText = extractOutputText(response);
+
+        try {
+            return objectMapper.readValue(
+                    outputText,
+                    ConversationAiResult.class
+            );
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "OpenAI 대화 분석 응답을 변환하지 못했습니다. 응답: "
+                            + outputText,
+                    e
+            );
+        }
     }
 
     // 대화방의 전체 메시지를 바탕으로 핵심 대화 내용을 간단하게 요약

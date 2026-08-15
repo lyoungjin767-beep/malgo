@@ -57,6 +57,28 @@ public class GlobalExceptionHandler {
             IllegalStateException e
     ) {
 
+        if ("무료 채팅 8회를 모두 사용했습니다. 멤버십이 필요합니다."
+                .equals(e.getMessage())
+                || "커스텀 AI 생성은 멤버십이 필요합니다."
+                .equals(e.getMessage())
+                || "커스텀 AI 수정은 멤버십이 필요합니다."
+                .equals(e.getMessage())
+                || "커스텀 AI 사용은 멤버십이 필요합니다."
+                .equals(e.getMessage())) {
+
+            Map<String, Object> body = Map.of(
+                    "timestamp", LocalDateTime.now().toString(),
+                    "status", 403,
+                    "error", "Forbidden",
+                    "code", "MEMBERSHIP_REQUIRED",
+                    "message", e.getMessage()
+            );
+
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(body);
+        }
+
         Map<String, Object> body = Map.of(
                 "timestamp", LocalDateTime.now().toString(),
                 "status", 400,

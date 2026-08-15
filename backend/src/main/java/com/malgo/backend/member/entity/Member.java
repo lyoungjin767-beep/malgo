@@ -29,6 +29,20 @@ public class Member {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    private boolean membership = false;
+
+    @Column(name = "chat_count", nullable = false)
+    private int chatCount = 0;
+
+    public void activateMembership() {
+        this.membership = true;
+    }
+
+    public void increaseChatCount() {
+        this.chatCount++;
+    }
+
     public Member(String username, String password) {
         this.username = username;
         this.password = password;

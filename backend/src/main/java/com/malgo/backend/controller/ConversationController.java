@@ -55,12 +55,12 @@ public class ConversationController {
     // GET /api/conversations/member/{memberId}/{id}/messages
 
     @GetMapping("/member/{memberId}/{id}/messages")
-    public ResponseEntity<List<ConversationMessageResponse>> getMessages(
+    public ResponseEntity<List<ConversationMessageDetailResponse>> getMessages(
             @PathVariable Long memberId,
             @PathVariable Long id
     ) {
         return ResponseEntity.ok(
-                conversationService.getMessages(memberId, id)
+                conversationService.getMessageDetails(memberId, id)
         );
     }
 
