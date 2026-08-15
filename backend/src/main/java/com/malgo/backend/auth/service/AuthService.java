@@ -1,6 +1,5 @@
 package com.malgo.backend.auth.service;
 
-import com.malgo.backend.auth.dto.LoginRequest;
 import com.malgo.backend.auth.dto.SignupRequest;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
@@ -47,24 +46,14 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
-    public Long login(LoginRequest request) {
-        Member member = memberRepository
-                .findByUsername(request.username())
+    public Long findMemberIdByUsername(String username) {
+        return memberRepository
+                .findByUsername(username)
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "아이디 또는 비밀번호가 올바르지 않습니다."
+                                "회원을 찾을 수 없습니다. username=" + username
                         )
-                );
-
-        if (!passwordEncoder.matches(
-                request.password(),
-                member.getPassword()
-        )) {
-            throw new IllegalArgumentException(
-                    "아이디 또는 비밀번호가 올바르지 않습니다."
-            );
-        }
-
-        return member.getId();
+                )
+                .getId();
     }
 }

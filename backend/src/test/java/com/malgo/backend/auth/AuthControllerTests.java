@@ -7,19 +7,27 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.malgo.backend.auth.controller.AuthController;
-import com.malgo.backend.auth.dto.LoginRequest;
 import com.malgo.backend.auth.dto.SignupRequest;
 import com.malgo.backend.auth.service.AuthService;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -27,14 +35,34 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class AuthControllerTests {
 
     private AuthService authService;
+    private AuthenticationManager authenticationManager;
+    private SecurityContextRepository securityContextRepository;
+    private SessionAuthenticationStrategy sessionAuthenticationStrategy;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         authService = Mockito.mock(AuthService.class);
+        authenticationManager = Mockito.mock(AuthenticationManager.class);
+        securityContextRepository = Mockito.mock(
+                SecurityContextRepository.class
+        );
+        sessionAuthenticationStrategy = Mockito.mock(
+                SessionAuthenticationStrategy.class
+        );
         mockMvc = MockMvcBuilders.standaloneSetup(
-                new AuthController(authService)
+                new AuthController(
+                        authService,
+                        authenticationManager,
+                        securityContextRepository,
+                        sessionAuthenticationStrategy
+                )
         ).build();
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -57,7 +85,13 @@ class AuthControllerTests {
 
     @Test
     void logsInMember() throws Exception {
-        Mockito.when(authService.login(ArgumentMatchers.any(LoginRequest.class)))
+        Authentication authentication = Mockito.mock(Authentication.class);
+        Mockito.when(authentication.getName()).thenReturn("login-user");
+        Mockito.when(authenticationManager.authenticate(
+                        ArgumentMatchers.any(Authentication.class)
+                ))
+                .thenReturn(authentication);
+        Mockito.when(authService.findMemberIdByUsername("login-user"))
                 .thenReturn(1L);
 
         mockMvc.perform(post("/api/v1/auth/login")
@@ -70,6 +104,20 @@ class AuthControllerTests {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(content().string("1"));
+
+        Mockito.verify(sessionAuthenticationStrategy).onAuthentication(
+                ArgumentMatchers.eq(authentication),
+                ArgumentMatchers.any(HttpServletRequest.class),
+                ArgumentMatchers.any(HttpServletResponse.class)
+        );
+        Mockito.verify(securityContextRepository).saveContext(
+                ArgumentMatchers.argThat(
+                        context -> context instanceof SecurityContext
+                                && context.getAuthentication() == authentication
+                ),
+                ArgumentMatchers.any(HttpServletRequest.class),
+                ArgumentMatchers.any(HttpServletResponse.class)
+        );
     }
 
     @Test
@@ -142,45 +190,37 @@ class AuthControllerTests {
     }
 
     @Test
-    void logsInMemberInService() {
+    void findsMemberIdByUsername() {
         MemberRepository memberRepository = Mockito.mock(MemberRepository.class);
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         AuthService service = new AuthService(memberRepository, passwordEncoder);
         Member member = new Member(
-                "login-user",
+                "member-user",
                 passwordEncoder.encode("password123")
         );
         ReflectionTestUtils.setField(member, "id", 1L);
 
-        Mockito.when(memberRepository.findByUsername("login-user"))
+        Mockito.when(memberRepository.findByUsername("member-user"))
                 .thenReturn(Optional.of(member));
 
-        Long memberId = service.login(new LoginRequest(
-                "login-user",
-                "password123"
-        ));
+        Long memberId = service.findMemberIdByUsername("member-user");
 
         assertThat(memberId).isEqualTo(1L);
     }
 
     @Test
-    void rejectsInvalidPasswordInService() {
+    void rejectsMissingMemberWhenFindingId() {
         MemberRepository memberRepository = Mockito.mock(MemberRepository.class);
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        AuthService service = new AuthService(memberRepository, passwordEncoder);
-        Member member = new Member(
-                "login-user",
-                passwordEncoder.encode("password123")
+        AuthService service = new AuthService(
+                memberRepository,
+                new BCryptPasswordEncoder()
         );
 
-        Mockito.when(memberRepository.findByUsername("login-user"))
-                .thenReturn(Optional.of(member));
+        Mockito.when(memberRepository.findByUsername("missing-user"))
+                .thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
-                service.login(new LoginRequest(
-                        "login-user",
-                        "wrong-password"
-                ))
+                service.findMemberIdByUsername("missing-user")
         ).isInstanceOf(IllegalArgumentException.class);
     }
 }

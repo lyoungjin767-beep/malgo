@@ -1,5 +1,6 @@
 package com.malgo.backend.controller;
 
+import com.malgo.backend.auth.service.MemberAuthorizationService;
 import com.malgo.backend.dto.*;
 import com.malgo.backend.service.ConversationService;
 import jakarta.validation.Valid;
@@ -19,11 +20,14 @@ import java.util.List;
 public class ConversationController {
 
     private final ConversationService conversationService;
+    private final MemberAuthorizationService memberAuthorizationService;
 
     public ConversationController(
-            ConversationService conversationService
+            ConversationService conversationService,
+            MemberAuthorizationService memberAuthorizationService
     ) {
         this.conversationService = conversationService;
+        this.memberAuthorizationService = memberAuthorizationService;
     }
 
     // 새 대화방 생성
@@ -32,6 +36,8 @@ public class ConversationController {
     public ResponseEntity<ConversationResponse> createConversation(
             @Valid @RequestBody ConversationCreateRequest request
     ) {
+        memberAuthorizationService.validateMember(request.memberId());
+
         return ResponseEntity.ok(
                 conversationService.createConversation(request)
         );
@@ -46,6 +52,8 @@ public class ConversationController {
             @PathVariable Long id,
             @Valid @RequestBody ConversationMessageRequest request
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         return ResponseEntity.ok(
                 conversationService.sendMessage(memberId, id, request)
         );
@@ -59,6 +67,8 @@ public class ConversationController {
             @PathVariable Long memberId,
             @PathVariable Long id
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         return ResponseEntity.ok(
                 conversationService.getMessageDetails(memberId, id)
         );
@@ -71,6 +81,8 @@ public class ConversationController {
             @PathVariable Long memberId,
             @PathVariable Long id
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         return ResponseEntity.ok(
                 conversationService.summarizeConversation(memberId, id)
         );
@@ -83,6 +95,8 @@ public class ConversationController {
             @PathVariable Long memberId,
             @PathVariable Long id
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         return ResponseEntity.ok(
                 conversationService.getConversationSummaries(memberId, id)
         );
@@ -95,6 +109,8 @@ public class ConversationController {
             @PathVariable Long memberId,
             @PathVariable Long id
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         conversationService.deleteConversation(memberId, id);
 
         return ResponseEntity.noContent().build();
@@ -105,6 +121,7 @@ public class ConversationController {
     @GetMapping("/member/{memberId}/statistics")
     public ResponseEntity<ConversationStatisticsResponse>
     getConversationStatistics(@PathVariable Long memberId) {
+        memberAuthorizationService.validateMember(memberId);
 
         return ResponseEntity.ok(
                 conversationService.getConversationStatistics(memberId)
@@ -118,6 +135,8 @@ public class ConversationController {
             @PathVariable Long memberId,
             @PathVariable Long id
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         return ResponseEntity.ok(
                 conversationService.getConversationDetail(memberId, id)
         );
@@ -130,6 +149,8 @@ public class ConversationController {
             @PathVariable Long memberId,
             @PathVariable Long id
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         return ResponseEntity.ok(
                 conversationService.getLatestConversationSummary(memberId, id)
         );
@@ -141,6 +162,8 @@ public class ConversationController {
     public ResponseEntity<List<ConversationListResponse>> getConversationsByMember(
             @PathVariable Long memberId
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         return ResponseEntity.ok(
                 conversationService.getConversationsByMember(memberId)
         );

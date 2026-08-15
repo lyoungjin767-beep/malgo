@@ -2,6 +2,7 @@ package com.malgo.backend.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -13,6 +14,22 @@ import java.util.Map;
 // 프로젝트 전체에서 발생하는 예외를 공통으로 처리
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthentication(
+            AuthenticationException e
+    ) {
+        Map<String, Object> body = Map.of(
+                "timestamp", LocalDateTime.now().toString(),
+                "status", 401,
+                "error", "Unauthorized",
+                "message", "아이디 또는 비밀번호가 올바르지 않습니다."
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(body);
+    }
 
     // 번역 기록을 찾을 수 없는 경우 404 Not Found 응답을 반환
 
