@@ -1,5 +1,6 @@
 package com.malgo.backend.controller;
 
+import com.malgo.backend.auth.service.MemberAuthorizationService;
 import com.malgo.backend.dto.*;
 import com.malgo.backend.service.TranslationService;
 import jakarta.validation.Valid;
@@ -16,15 +17,22 @@ import java.util.List;
 public class TranslationController {
 
     private final TranslationService translationService;
+    private final MemberAuthorizationService memberAuthorizationService;
 
-    public TranslationController(TranslationService translationService) {
+    public TranslationController(
+            TranslationService translationService,
+            MemberAuthorizationService memberAuthorizationService
+    ) {
         this.translationService = translationService;
+        this.memberAuthorizationService = memberAuthorizationService;
     }
 
     @PostMapping("/analyze")
     public ResponseEntity<TranslationResponse> analyze(
             @Valid @RequestBody TranslationRequest request
     ) {
+        memberAuthorizationService.validateMember(request.memberId());
+
         TranslationResponse response = translationService.analyze(request);
         return ResponseEntity.ok(response);
     }
@@ -35,6 +43,7 @@ public class TranslationController {
     public ResponseEntity<List<TranslationHistoryResponse>> getTranslationHistory(
             @PathVariable Long memberId
     ) {
+        memberAuthorizationService.validateMember(memberId);
 
         List<TranslationHistoryResponse> history =
                 translationService.getTranslationHistory(memberId);
@@ -49,6 +58,8 @@ public class TranslationController {
             @PathVariable Long memberId,
             @PathVariable Long id
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         return ResponseEntity.ok(
                 translationService.getTranslationDetail(memberId, id)
         );
@@ -61,6 +72,8 @@ public class TranslationController {
             @PathVariable Long memberId,
             @PathVariable Long id
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         translationService.deleteTranslation(memberId, id);
         // 삭제 성공 시 본문 없이 204 No Content 반환
         return ResponseEntity.noContent().build();
@@ -74,6 +87,8 @@ public class TranslationController {
             @PathVariable Long id,
             @Valid @RequestBody TranslationMemoRequest request
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         return ResponseEntity.ok(
                 translationService.saveOrUpdateMemo(
                         memberId,
@@ -90,6 +105,8 @@ public class TranslationController {
             @PathVariable Long memberId,
             @PathVariable Long id
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         return ResponseEntity.ok(
                 translationService.getMemo(memberId, id)
         );
@@ -102,6 +119,7 @@ public class TranslationController {
     getRecentTranslations(
             @PathVariable Long memberId
     ) {
+        memberAuthorizationService.validateMember(memberId);
 
         return ResponseEntity.ok(
                 translationService.getMyPageTranslations(memberId)
@@ -115,6 +133,7 @@ public class TranslationController {
     getTranslationStatistics(
             @PathVariable Long memberId
     ) {
+        memberAuthorizationService.validateMember(memberId);
 
         return ResponseEntity.ok(
                 translationService.getTranslationStatistics(memberId)
@@ -128,6 +147,7 @@ public class TranslationController {
             @PathVariable Long memberId,
             @PathVariable Long id
     ) {
+        memberAuthorizationService.validateMember(memberId);
 
         translationService.deleteMemo(memberId, id);
 
