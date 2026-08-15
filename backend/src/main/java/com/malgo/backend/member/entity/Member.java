@@ -1,15 +1,18 @@
 package com.malgo.backend.member.entity;
 
-import jakarta.persistence.*;
-import lombok.AccessLevel;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
-@Entity
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
+@Entity
 @Table(name = "members")
 public class Member {
 
@@ -17,7 +20,7 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 10)
+    @Column(nullable = false, unique = true, length = 30)
     private String username;
 
     @Column(nullable = false, length = 255)
@@ -30,9 +33,5 @@ public class Member {
         this.username = username;
         this.password = password;
         this.createdAt = LocalDateTime.now();
-    }
-
-    public void changePassword(String encodedPassword) {
-        this.password = encodedPassword;
     }
 }
