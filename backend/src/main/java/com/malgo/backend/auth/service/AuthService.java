@@ -4,6 +4,7 @@ import com.malgo.backend.auth.dto.LoginRequest;
 import com.malgo.backend.auth.dto.SignupRequest;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
+import com.malgo.backend.subscription.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ public class AuthService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SubscriptionService subscriptionService;
 
     @Transactional
     public Long signup(SignupRequest request) {
@@ -44,7 +46,10 @@ public class AuthService {
                 encodedPassword
         );
 
-        return memberRepository.save(member).getId();
+        Member savedMember = memberRepository.save(member);
+        subscriptionService.createFreeSubscription(savedMember);
+
+        return savedMember.getId();
     }
 
     public Long login(LoginRequest request) {
