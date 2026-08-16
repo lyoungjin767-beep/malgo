@@ -483,7 +483,10 @@ public class OpenAiClient {
                 - 개인에 대한 비판은 가능한 경우 행동, 결과, 업무 품질 또는 구체적인 문제에 대한 표현으로 전환한다.
                 - 문화 차이는 개인과 상황에 따라 다를 수 있으므로 고정관념처럼 단정하지 않는다.
                 - culturalExplanation과 warning의 reason은 sourceLanguage 사용자가 이해할 수 있는 언어로 작성한다.
-
+                - culturalExplanation과 warning의 reason은 자연스러운 표준어와 올바른 맞춤법으로 작성한다.
+                - sourceLanguage가 ko인 경우 외래어와 전문 용어는 한국어에서 일반적으로 사용하는 표준 표기를 사용한다.
+                - 응답을 반환하기 전에 culturalExplanation과 warning의 reason에 오탈자나 어색한 표현이 없는지 한 번 검토한다.
+                
                 - culturalTranslation과 alternativeExpression은 원문의 핵심 의도와 감정을 유지해야 한다.
                 - 문화적으로 부적절한 표현을 완화하더라도 사용자의 불만, 요청, 거절, 긴급성 등의 핵심 의도를 임의로 삭제하거나 반대 의미로 변경하지 않는다.
                 - 비꼼이나 반어 표현을 완화할 때는 숨겨진 실제 의도를 명확하고 건설적인 표현으로 변환한다.
