@@ -7,6 +7,7 @@ public record ConversationResponse(
         Long aiPartnerId,
         String aiPartnerName,
         String situation,
-        String field
+        String field,
+        String targetLanguage
 ) {
 }

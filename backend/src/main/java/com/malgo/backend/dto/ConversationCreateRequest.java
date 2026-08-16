@@ -23,6 +23,13 @@ public record ConversationCreateRequest(
         )
         String field,
 
+        @NotBlank(message = "언어 선택은 필수입니다.")
+        @Pattern(
+                regexp = "EN|JA|ZH|VI|ES|DE",
+                message = "언어는 EN, JA, ZH, VI, ES, DE 중 하나여야 합니다."
+        )
+        String targetLanguage,
+
         // AI Partner 미선택 시 직접 설정
         String targetCountry,
         String relationshipType,

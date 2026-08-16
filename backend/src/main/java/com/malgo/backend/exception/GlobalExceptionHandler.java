@@ -81,6 +81,8 @@ public class GlobalExceptionHandler {
                 || "커스텀 AI 수정은 멤버십이 필요합니다."
                 .equals(e.getMessage())
                 || "커스텀 AI 사용은 멤버십이 필요합니다."
+                .equals(e.getMessage())
+                || "프리미엄 언어는 멤버십이 필요합니다."
                 .equals(e.getMessage())) {
 
             Map<String, Object> body = Map.of(

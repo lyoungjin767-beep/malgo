@@ -47,6 +47,9 @@ public class Conversation {
 
     // AI Partner를 선택하지 않았을 때 사용하는 직접 설정 정보
 
+    @Column(name = "target_language", length = 10, nullable = false)
+    private String targetLanguage;
+
     @Column(length = 10)
     private String targetCountry;
 
@@ -70,6 +73,7 @@ public class Conversation {
             AiPartner aiPartner,
             String situation,
             String field,
+            String targetLanguage,
             String targetCountry,
             String relationshipType,
             String ageGroup,
@@ -80,6 +84,7 @@ public class Conversation {
         this.aiPartner = aiPartner;
         this.situation = situation;
         this.field = field;
+        this.targetLanguage = targetLanguage;
         this.targetCountry = targetCountry;
         this.relationshipType = relationshipType;
         this.ageGroup = ageGroup;
@@ -126,6 +131,10 @@ public class Conversation {
 
     public Member getMember() {
         return member;
+    }
+
+    public String getTargetLanguage() {
+        return targetLanguage;
     }
 
     public String getTargetCountry() {

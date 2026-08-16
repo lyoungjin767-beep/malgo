@@ -71,6 +71,18 @@ public class ConversationService {
                         )
                 );
 
+        String targetLanguage = request.targetLanguage();
+
+        if (!member.isMembership()
+                && ("VI".equals(targetLanguage)
+                || "ES".equals(targetLanguage)
+                || "DE".equals(targetLanguage))) {
+
+            throw new IllegalStateException(
+                    "프리미엄 언어는 멤버십이 필요합니다."
+            );
+        }
+
         AiPartner partner = null;
 
         String targetCountry;
@@ -135,6 +147,7 @@ public class ConversationService {
                 partner,
                 request.situation(),
                 request.field(),
+                request.targetLanguage(),
                 targetCountry,
                 relationshipType,
                 ageGroup,
@@ -150,7 +163,8 @@ public class ConversationService {
                 partner != null ? partner.getId() : null,
                 partner != null ? partner.getName() : null,
                 saved.getSituation(),
-                saved.getField()
+                saved.getField(),
+                saved.getTargetLanguage()
         );
     }
 
@@ -463,12 +477,12 @@ public class ConversationService {
 
         Map<String, Long> counts = conversations.stream()
                 .filter(conversation ->
-                        conversation.getSituation() != null
-                                && !conversation.getSituation().isBlank()
+                        conversation.getTargetLanguage() != null
+                                && !conversation.getTargetLanguage().isBlank()
                 )
                 .collect(
                         Collectors.groupingBy(
-                                Conversation::getSituation,
+                                Conversation::getTargetLanguage,
                                 LinkedHashMap::new,
                                 Collectors.counting()
                         )
@@ -477,7 +491,7 @@ public class ConversationService {
         Map<String, Double> percentages =
                 new LinkedHashMap<>();
 
-        counts.forEach((situation, count) -> {
+        counts.forEach((language, count) -> {
 
             double percentage =
                     totalCount == 0
@@ -489,7 +503,7 @@ public class ConversationService {
                     Math.round(percentage * 10.0) / 10.0;
 
             percentages.put(
-                    situation,
+                    language,
                     percentage
             );
         });
