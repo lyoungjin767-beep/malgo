@@ -28,6 +28,7 @@ public class DataInitializer {
                     new AiPartner(
                             "Tom",
                             "US",
+                            "EN",
                             "CLIENT",
                             "WORKER",
                             "MALE",
@@ -42,6 +43,7 @@ public class DataInitializer {
                     new AiPartner(
                             "kash",
                             "JP",
+                            "JA",
                             "FRIEND",
                             "COLLEGE_STUDENT",
                             "MALE",
@@ -56,6 +58,7 @@ public class DataInitializer {
                     new AiPartner(
                             "sana",
                             "VN",
+                            "VI",
                             "BOSS",
                             "WORKER",
                             "FEMALE",

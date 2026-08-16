@@ -50,6 +50,9 @@ public class Conversation {
     @Column(length = 10)
     private String targetCountry;
 
+    @Column(length = 10)
+    private String targetLanguage;
+
     @Column(length = 30)
     private String relationshipType;
 
@@ -71,6 +74,7 @@ public class Conversation {
             String situation,
             String field,
             String targetCountry,
+            String targetLanguage,
             String relationshipType,
             String ageGroup,
             String speechStyle,
@@ -81,6 +85,7 @@ public class Conversation {
         this.situation = situation;
         this.field = field;
         this.targetCountry = targetCountry;
+        this.targetLanguage = targetLanguage;
         this.relationshipType = relationshipType;
         this.ageGroup = ageGroup;
         this.speechStyle = speechStyle;
@@ -130,6 +135,10 @@ public class Conversation {
 
     public String getTargetCountry() {
         return targetCountry;
+    }
+
+    public String getTargetLanguage() {
+        return targetLanguage;
     }
 
     public String getRelationshipType() {

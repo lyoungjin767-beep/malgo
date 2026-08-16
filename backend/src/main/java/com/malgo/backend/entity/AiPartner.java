@@ -30,6 +30,11 @@ public class AiPartner {
     @Column(nullable = false, length = 10)
     private String targetCountry;
 
+    // AI가 사용할 언어
+    // EN, JA, ZH, VI, ES, DE
+    @Column(nullable = false, length = 10)
+    private String targetLanguage;
+
     // 사용자와 상대방의 관계
     // 예: CLIENT, FRIEND, BOSS
     @Column(nullable = false, length = 30)
@@ -69,6 +74,7 @@ public class AiPartner {
     public AiPartner(
             String name,
             String targetCountry,
+            String targetLanguage,
             String relationshipType,
             String ageGroup,
             String gender,
@@ -78,6 +84,7 @@ public class AiPartner {
     ) {
         this.name = name;
         this.targetCountry = targetCountry;
+        this.targetLanguage = targetLanguage;
         this.relationshipType = relationshipType;
         this.ageGroup = ageGroup;
         this.gender = gender;
@@ -90,6 +97,7 @@ public class AiPartner {
             Member member,
             String name,
             String targetCountry,
+            String targetLanguage,
             String relationshipType,
             String ageGroup,
             String gender,
@@ -100,6 +108,7 @@ public class AiPartner {
         this.member = member;
         this.name = name;
         this.targetCountry = targetCountry;
+        this.targetLanguage = targetLanguage;
         this.relationshipType = relationshipType;
         this.ageGroup = ageGroup;
         this.gender = gender;
@@ -126,6 +135,10 @@ public class AiPartner {
 
     public String getTargetCountry() {
         return targetCountry;
+    }
+
+    public String getTargetLanguage() {
+        return targetLanguage;
     }
 
     public String getRelationshipType() {
@@ -160,6 +173,7 @@ public class AiPartner {
     public void update(
             String name,
             String targetCountry,
+            String targetLanguage,
             String relationshipType,
             String ageGroup,
             String gender,
@@ -168,6 +182,7 @@ public class AiPartner {
     ) {
         this.name = name;
         this.targetCountry = targetCountry;
+        this.targetLanguage = targetLanguage;
         this.relationshipType = relationshipType;
         this.ageGroup = ageGroup;
         this.gender = gender;

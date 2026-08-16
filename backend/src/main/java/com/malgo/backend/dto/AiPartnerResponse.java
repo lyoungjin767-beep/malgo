@@ -6,6 +6,7 @@ public record AiPartnerResponse(
         Long id,
         String name,
         String targetCountry,
+        String targetLanguage,
         String relationshipType,
         String ageGroup,
         String gender,

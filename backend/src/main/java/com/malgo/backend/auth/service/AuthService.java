@@ -74,4 +74,14 @@ public class AuthService {
 
         return member.getId();
     }
+
+    public Long findMemberIdByUsername(String username) {
+        return memberRepository.findByUsername(username)
+                .map(Member::getId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Member not found. username=" + username
+                        )
+                );
+    }
 }

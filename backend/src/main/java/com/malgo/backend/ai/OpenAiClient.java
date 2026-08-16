@@ -66,6 +66,7 @@ public class OpenAiClient {
     public String chat(
             String partnerName,
             String targetCountry,
+            String targetLanguage,
             String relationshipType,
             String speechStyle,
             String characteristic,
@@ -86,11 +87,41 @@ public class OpenAiClient {
 
                 AI 상대 이름: %s
                 대상 국가: %s
+                사용 언어: %s
                 사용자와 상대방의 관계: %s
                 상대방 말투/스타일: %s
                 상대방 특징: %s
                 현재 상황: %s
                 업무 분야: %s
+
+                언어 규칙:
+                - targetLanguage가 EN이면 추천 표현과 AI 상대의 외국어 표현은 영어로 작성한다.
+                - targetLanguage가 JA이면 추천 표현과 AI 상대의 외국어 표현은 일본어로 작성한다.
+                - targetLanguage가 ZH이면 추천 표현과 AI 상대의 외국어 표현은 중국어 간체로 작성한다.
+                - targetLanguage가 VI이면 추천 표현과 AI 상대의 외국어 표현은 베트남어로 작성한다.
+                - targetLanguage가 ES이면 추천 표현과 AI 상대의 외국어 표현은 스페인어로 작성한다.
+                - targetLanguage가 DE이면 추천 표현과 AI 상대의 외국어 표현은 독일어로 작성한다.
+                - 의미와 맥락 설명은 기본적으로 한국어로 작성한다.
+                - 추천 외국어 표현 아래에는 자연스러운 한국어 의미를 함께 제공한다.
+
+                ------------------------------
+                말투 규칙
+                ------------------------------
+
+                상대방 말투/스타일 값에 따라 다음 기준을 적용한다.
+
+                - FORMAL: 격식체. 공식적이고 전문적인 어휘와 문장 구조를 사용한다.
+                - POLITE: 정중체. 예의 있고 부드럽게 표현하되 지나치게 딱딱하지 않게 한다.
+                - FRIENDLY: 친근체. 친근하고 편안한 대화체를 사용한다.
+                - WARM: 다정체. 따뜻하고 배려가 느껴지는 표현을 사용한다.
+                - PLAYFUL: 장난체. 가볍고 유쾌한 표현을 사용하되 상대방에게 무례하지 않게 한다.
+                - PLAIN: 담백체. 과장하거나 감정을 지나치게 넣지 않고 간결하고 자연스럽게 표현한다.
+                - SINCERE: 진성체. 진솔하고 진정성 있는 느낌으로 표현한다.
+                - EMOTIONAL: 감성체. 감정과 분위기가 자연스럽게 느껴지도록 표현한다.
+                - DIALECT: 사투리. 대상 국가와 언어에서 자연스러운 지역적 표현을 사용할 수 있다.
+                - DIALECT인 경우 특정 지역이 지정되지 않았다면 과도한 방언을 임의로 사용하지 않는다.
+                - DIALECT인 경우 targetCountry를 참고하여 자연스러운 구어적 특징을 가볍게 반영한다.
+                - DIALECT인 경우 존재하지 않는 방언이나 억지스러운 표현을 만들어내지 않는다.
 
                 사용자 메시지:
                 %s
@@ -217,6 +248,7 @@ public class OpenAiClient {
                 .formatted(
                         partnerName,
                         targetCountry,
+                        targetLanguage,
                         relationshipType,
                         speechStyle,
                         characteristic == null ? "별도 정보 없음" : characteristic,
