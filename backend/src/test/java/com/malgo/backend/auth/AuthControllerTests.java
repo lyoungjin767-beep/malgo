@@ -11,6 +11,7 @@ import com.malgo.backend.auth.dto.SignupRequest;
 import com.malgo.backend.auth.service.AuthService;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
+import com.malgo.backend.subscription.service.SubscriptionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Optional;
@@ -124,7 +125,13 @@ class AuthControllerTests {
     void storesHashedPassword() {
         MemberRepository memberRepository = Mockito.mock(MemberRepository.class);
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        AuthService service = new AuthService(memberRepository, passwordEncoder);
+        SubscriptionService subscriptionService =
+                Mockito.mock(SubscriptionService.class);
+        AuthService service = new AuthService(
+                memberRepository,
+                passwordEncoder,
+                subscriptionService
+        );
 
         Mockito.when(memberRepository.existsByUsername("hash-user")).thenReturn(false);
         Mockito.when(memberRepository.save(ArgumentMatchers.any(Member.class)))
@@ -144,6 +151,8 @@ class AuthControllerTests {
         Mockito.verify(memberRepository).save(captor.capture());
 
         Member member = captor.getValue();
+        Mockito.verify(subscriptionService).createFreeSubscription(member);
+
         assertThat(memberId).isEqualTo(1L);
         assertThat(member.getUsername()).isEqualTo("hash-user");
         assertThat(member.getPassword()).isNotEqualTo("password123");
@@ -153,9 +162,12 @@ class AuthControllerTests {
     @Test
     void rejectsDuplicateUsernameInService() {
         MemberRepository memberRepository = Mockito.mock(MemberRepository.class);
+        SubscriptionService subscriptionService =
+                Mockito.mock(SubscriptionService.class);
         AuthService service = new AuthService(
                 memberRepository,
-                new BCryptPasswordEncoder()
+                new BCryptPasswordEncoder(),
+                subscriptionService
         );
 
         Mockito.when(memberRepository.existsByUsername("duplicate-user"))
@@ -173,9 +185,12 @@ class AuthControllerTests {
     @Test
     void rejectsPasswordConfirmMismatchInService() {
         MemberRepository memberRepository = Mockito.mock(MemberRepository.class);
+        SubscriptionService subscriptionService =
+                Mockito.mock(SubscriptionService.class);
         AuthService service = new AuthService(
                 memberRepository,
-                new BCryptPasswordEncoder()
+                new BCryptPasswordEncoder(),
+                subscriptionService
         );
 
         assertThatThrownBy(() ->
@@ -187,13 +202,18 @@ class AuthControllerTests {
         ).isInstanceOf(IllegalArgumentException.class);
 
         Mockito.verifyNoInteractions(memberRepository);
+        Mockito.verifyNoInteractions(subscriptionService);
     }
 
     @Test
     void findsMemberIdByUsername() {
         MemberRepository memberRepository = Mockito.mock(MemberRepository.class);
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        AuthService service = new AuthService(memberRepository, passwordEncoder);
+        AuthService service = new AuthService(
+                memberRepository,
+                passwordEncoder,
+                Mockito.mock(SubscriptionService.class)
+        );
         Member member = new Member(
                 "member-user",
                 passwordEncoder.encode("password123")
@@ -211,9 +231,12 @@ class AuthControllerTests {
     @Test
     void rejectsMissingMemberWhenFindingId() {
         MemberRepository memberRepository = Mockito.mock(MemberRepository.class);
+        SubscriptionService subscriptionService =
+                Mockito.mock(SubscriptionService.class);
         AuthService service = new AuthService(
                 memberRepository,
-                new BCryptPasswordEncoder()
+                new BCryptPasswordEncoder(),
+                subscriptionService
         );
 
         Mockito.when(memberRepository.findByUsername("missing-user"))

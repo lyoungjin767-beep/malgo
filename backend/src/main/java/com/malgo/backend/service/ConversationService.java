@@ -86,6 +86,7 @@ public class ConversationService {
         AiPartner partner = null;
 
         String targetCountry;
+        String targetLanguage;
         String relationshipType;
         String ageGroup;
         String speechStyle;
@@ -119,6 +120,7 @@ public class ConversationService {
 
             // 선택한 AI Partner의 설정 사용
             targetCountry = partner.getTargetCountry();
+            targetLanguage = partner.getTargetLanguage();
             relationshipType = partner.getRelationshipType();
             ageGroup = partner.getAgeGroup();
             speechStyle = partner.getSpeechStyle();
@@ -135,7 +137,16 @@ public class ConversationService {
                 );
             }
 
+            if (request.targetLanguage() == null
+                    || request.targetLanguage().isBlank()) {
+
+                throw new IllegalArgumentException(
+                        "AI 상대를 선택하지 않은 경우 언어 선택은 필수입니다."
+                );
+            }
+
             targetCountry = request.targetCountry();
+            targetLanguage = request.targetLanguage();
             relationshipType = request.relationshipType();
             ageGroup = request.ageGroup();
             speechStyle = request.speechStyle();
@@ -149,6 +160,7 @@ public class ConversationService {
                 request.field(),
                 request.targetLanguage(),
                 targetCountry,
+                targetLanguage,
                 relationshipType,
                 ageGroup,
                 speechStyle,
@@ -192,6 +204,7 @@ public class ConversationService {
 
         String partnerName;
         String targetCountry;
+        String targetLanguage;
         String relationshipType;
         String speechStyle;
         String characteristic;
@@ -199,12 +212,14 @@ public class ConversationService {
         if (partner != null) {
             partnerName = partner.getName();
             targetCountry = partner.getTargetCountry();
+            targetLanguage = partner.getTargetLanguage();
             relationshipType = partner.getRelationshipType();
             speechStyle = partner.getSpeechStyle();
             characteristic = partner.getCharacteristic();
         } else {
             partnerName = "직접 설정 상대";
             targetCountry = conversation.getTargetCountry();
+            targetLanguage = conversation.getTargetLanguage();
             relationshipType = conversation.getRelationshipType();
             speechStyle = conversation.getSpeechStyle();
             characteristic = conversation.getCharacteristic();
@@ -228,6 +243,7 @@ public class ConversationService {
         String aiContent = openAiClient.chat(
                 partnerName,
                 targetCountry,
+                targetLanguage,
                 relationshipType,
                 speechStyle,
                 characteristic,
