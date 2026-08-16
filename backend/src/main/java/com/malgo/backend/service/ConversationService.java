@@ -1,9 +1,6 @@
 package com.malgo.backend.service;
 
-import com.malgo.backend.dto.ConversationCreateRequest;
-import com.malgo.backend.dto.ConversationMessageRequest;
-import com.malgo.backend.dto.ConversationMessageResponse;
-import com.malgo.backend.dto.ConversationResponse;
+import com.malgo.backend.dto.*;
 import com.malgo.backend.entity.AiPartner;
 import com.malgo.backend.entity.Conversation;
 import com.malgo.backend.entity.ConversationMessage;
@@ -15,15 +12,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.malgo.backend.ai.OpenAiClient;
-import com.malgo.backend.dto.ConversationChatResponse;
-import com.malgo.backend.dto.ConversationSummaryResponse;
 import com.malgo.backend.entity.ConversationSummary;
 import com.malgo.backend.repository.ConversationSummaryRepository;
-import com.malgo.backend.dto.ConversationListResponse;
-import com.malgo.backend.dto.ConversationStatisticsResponse;
-import com.malgo.backend.dto.ConversationDetailResponse;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
+import com.malgo.backend.repository.ConversationMessageAnalysisRepository;
+import com.malgo.backend.entity.ConversationMessageAnalysis;
+import com.malgo.backend.repository.ConversationMessageMemoRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,6 +32,8 @@ public class ConversationService {
 
     private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository messageRepository;
+    private final ConversationMessageAnalysisRepository analysisRepository;
+    private final ConversationMessageMemoRepository memoRepository;
     private final AiPartnerRepository aiPartnerRepository;
     private final OpenAiClient openAiClient;
     private final ConversationSummaryRepository summaryRepository;
@@ -45,6 +42,8 @@ public class ConversationService {
     public ConversationService(
             ConversationRepository conversationRepository,
             ConversationMessageRepository messageRepository,
+            ConversationMessageAnalysisRepository analysisRepository,
+            ConversationMessageMemoRepository memoRepository,
             AiPartnerRepository aiPartnerRepository,
             OpenAiClient openAiClient,
             ConversationSummaryRepository summaryRepository,
@@ -52,6 +51,8 @@ public class ConversationService {
     ) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
+        this.analysisRepository = analysisRepository;
+        this.memoRepository = memoRepository;
         this.aiPartnerRepository = aiPartnerRepository;
         this.openAiClient = openAiClient;
         this.summaryRepository = summaryRepository;
@@ -95,6 +96,11 @@ public class ConversationService {
 
                     throw new AccessDeniedException(
                             "해당 회원의 AI 상대가 아닙니다."
+                    );
+                }
+                if (!member.isMembership()) {
+                    throw new IllegalStateException(
+                            "커스텀 AI 사용은 멤버십이 필요합니다."
                     );
                 }
             }
@@ -160,6 +166,14 @@ public class ConversationService {
         Conversation conversation =
                 getOwnedConversation(memberId, conversationId);
 
+        Member member = conversation.getMember();
+
+        if (!member.isMembership() && member.getChatCount() >= 8) {
+            throw new IllegalStateException(
+                    "무료 채팅 8회를 모두 사용했습니다. 멤버십이 필요합니다."
+            );
+        }
+
         AiPartner partner = conversation.getAiPartner();
 
         String partnerName;
@@ -208,6 +222,16 @@ public class ConversationService {
                 request.content()
         );
 
+        ConversationAiResult aiAnalysis =
+                openAiClient.analyzeConversationResponse(
+                        targetCountry,
+                        relationshipType,
+                        conversation.getSituation(),
+                        conversation.getField(),
+                        request.content(),
+                        aiContent
+                );
+
         // 4. 생성된 AI 응답 자동 저장
         ConversationMessage assistantMessage =
                 new ConversationMessage(
@@ -218,6 +242,22 @@ public class ConversationService {
 
         ConversationMessage savedAssistantMessage =
                 messageRepository.save(assistantMessage);
+
+        ConversationMessageAnalysis analysis =
+                new ConversationMessageAnalysis(
+                        savedAssistantMessage,
+                        aiAnalysis.recommendedTranslation(),
+                        aiAnalysis.requestClarity(),
+                        aiAnalysis.businessTone(),
+                        aiAnalysis.intentDelivery(),
+                        aiAnalysis.culturalAppropriateness(),
+                        aiAnalysis.ambiguity()
+                );
+        analysisRepository.save(analysis);
+
+        if (!member.isMembership()) {
+            member.increaseChatCount();
+        }
 
         // 5. USER + ASSISTANT 메시지를 함께 프론트에 반환
         return new ConversationChatResponse(
@@ -232,6 +272,14 @@ public class ConversationService {
                         savedAssistantMessage.getSenderType(),
                         savedAssistantMessage.getContent(),
                         savedAssistantMessage.getCreatedAt()
+                ),
+                new ConversationAnalysisResponse(
+                        aiAnalysis.recommendedTranslation(),
+                        aiAnalysis.requestClarity(),
+                        aiAnalysis.businessTone(),
+                        aiAnalysis.intentDelivery(),
+                        aiAnalysis.culturalAppropriateness(),
+                        aiAnalysis.ambiguity()
                 )
         );
     }
@@ -254,6 +302,52 @@ public class ConversationService {
                         message.getContent(),
                         message.getCreatedAt()
                 ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ConversationMessageDetailResponse> getMessageDetails(
+            Long memberId,
+            Long conversationId
+    ) {
+        // 해당 회원의 대화방인지 확인
+        getOwnedConversation(memberId, conversationId);
+
+        return messageRepository
+                .findByConversationIdOrderByCreatedAtAsc(conversationId)
+                .stream()
+                .map(message -> {
+
+                    ConversationAnalysisResponse analysisResponse =
+                            analysisRepository
+                                    .findByConversationMessageId(message.getId())
+                                    .map(analysis ->
+                                            new ConversationAnalysisResponse(
+                                                    analysis.getRecommendedTranslation(),
+                                                    analysis.getRequestClarity(),
+                                                    analysis.getBusinessTone(),
+                                                    analysis.getIntentDelivery(),
+                                                    analysis.getCulturalAppropriateness(),
+                                                    analysis.getAmbiguity()
+                                            )
+                                    )
+                                    .orElse(null);
+
+                    ConversationMessageMemoResponse memoResponse =
+                            memoRepository
+                                    .findByConversationMessageId(message.getId())
+                                    .map(ConversationMessageMemoResponse::from)
+                                    .orElse(null);
+
+                    return new ConversationMessageDetailResponse(
+                            message.getId(),
+                            message.getSenderType(),
+                            message.getContent(),
+                            message.getCreatedAt(),
+                            analysisResponse,
+                            memoResponse
+                    );
+                })
                 .toList();
     }
 

@@ -79,6 +79,12 @@ public class AiPartnerService {
                         )
                 );
 
+        if (!member.isMembership()) {
+            throw new IllegalStateException(
+                    "커스텀 AI 생성은 멤버십이 필요합니다."
+            );
+        }
+
         AiPartner partner = new AiPartner(
                 member,
                 request.name(),
@@ -120,6 +126,19 @@ public class AiPartnerService {
 
         AiPartner partner =
                 getOwnedCustomPartner(memberId, partnerId);
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "회원을 찾을 수 없습니다. id=" + memberId
+                        )
+                );
+
+        if (!member.isMembership()) {
+            throw new IllegalStateException(
+                    "커스텀 AI 수정은 멤버십이 필요합니다."
+            );
+        }
 
         partner.update(
                 request.name(),

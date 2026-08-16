@@ -3,50 +3,87 @@ package com.malgo.backend.auth.controller;
 import com.malgo.backend.auth.dto.LoginRequest;
 import com.malgo.backend.auth.dto.SignupRequest;
 import com.malgo.backend.auth.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final AuthService authService;
+    private final AuthenticationManager authenticationManager;
+    private final SecurityContextRepository securityContextRepository;
+    private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
 
-    // 회원가입
-    @PostMapping("/signup")
-    public ResponseEntity<Map<String, Object>> signup(
-            @Valid @RequestBody SignupRequest request
+    public AuthController(
+            AuthService authService,
+            AuthenticationManager authenticationManager,
+            SecurityContextRepository securityContextRepository,
+            SessionAuthenticationStrategy sessionAuthenticationStrategy
     ) {
-
-        Long memberId = authService.signup(request);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(Map.of(
-                        "message", "회원가입에 성공했습니다.",
-                        "memberId", memberId
-                ));
+        this.authService = authService;
+        this.authenticationManager = authenticationManager;
+        this.securityContextRepository = securityContextRepository;
+        this.sessionAuthenticationStrategy = sessionAuthenticationStrategy;
     }
 
-    // 로그인
-    @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(
-            @Valid @RequestBody LoginRequest request
+    @PostMapping("/signup")
+    public ResponseEntity<Long> signup(
+            @Valid @RequestBody SignupRequest request
     ) {
+        Long memberId = authService.signup(request);
 
-        Long memberId = authService.login(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(memberId);
+    }
 
-        return ResponseEntity.ok(
-                Map.of(
-                        "message", "로그인에 성공했습니다.",
-                        "memberId", memberId
+    @PostMapping("/login")
+    public ResponseEntity<Long> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        Authentication authentication = authenticationManager.authenticate(
+                UsernamePasswordAuthenticationToken.unauthenticated(
+                        request.username(),
+                        request.password()
                 )
         );
+
+        Long memberId = authService.findMemberIdByUsername(
+                authentication.getName()
+        );
+
+        sessionAuthenticationStrategy.onAuthentication(
+                authentication,
+                httpRequest,
+                httpResponse
+        );
+
+        SecurityContext securityContext =
+                SecurityContextHolder.createEmptyContext();
+        securityContext.setAuthentication(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
+        securityContextRepository.saveContext(
+                securityContext,
+                httpRequest,
+                httpResponse
+        );
+
+        return ResponseEntity.ok(memberId);
     }
 }

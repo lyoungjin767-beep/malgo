@@ -4,6 +4,7 @@ package com.malgo.backend.dto;
 
 public record ConversationChatResponse(
         ConversationMessageResponse userMessage,
-        ConversationMessageResponse assistantMessage
+        ConversationMessageResponse assistantMessage,
+        ConversationAnalysisResponse analysis
 ) {
 }

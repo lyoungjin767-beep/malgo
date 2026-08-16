@@ -1,5 +1,6 @@
 package com.malgo.backend.controller;
 
+import com.malgo.backend.auth.service.MemberAuthorizationService;
 import com.malgo.backend.dto.AiPartnerResponse;
 import com.malgo.backend.service.AiPartnerService;
 import jakarta.validation.Valid;
@@ -19,11 +20,14 @@ import java.util.List;
 public class AiPartnerController {
 
     private final AiPartnerService aiPartnerService;
+    private final MemberAuthorizationService memberAuthorizationService;
 
     public AiPartnerController(
-            AiPartnerService aiPartnerService
+            AiPartnerService aiPartnerService,
+            MemberAuthorizationService memberAuthorizationService
     ) {
         this.aiPartnerService = aiPartnerService;
+        this.memberAuthorizationService = memberAuthorizationService;
     }
 
     // 기본 AI + 해당 회원이 만든 커스텀 AI 목록 조회
@@ -32,6 +36,7 @@ public class AiPartnerController {
     public ResponseEntity<List<AiPartnerResponse>> getPartners(
             @PathVariable Long memberId
     ) {
+        memberAuthorizationService.validateMember(memberId);
 
         return ResponseEntity.ok(
                 aiPartnerService.getPartners(memberId)
@@ -45,6 +50,8 @@ public class AiPartnerController {
             @PathVariable Long memberId,
             @Valid @RequestBody AiPartnerCreateRequest request
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         return ResponseEntity.ok(
                 aiPartnerService.createCustomPartner(
                         memberId,
@@ -62,6 +69,8 @@ public class AiPartnerController {
             @PathVariable Long id,
             @Valid @RequestBody AiPartnerUpdateRequest request
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         return ResponseEntity.ok(
                 aiPartnerService.updatePartner(memberId, id, request)
         );
@@ -74,6 +83,7 @@ public class AiPartnerController {
             @PathVariable Long memberId,
             @PathVariable Long id
     ) {
+        memberAuthorizationService.validateMember(memberId);
 
         aiPartnerService.deletePartner(memberId, id);
 
@@ -87,6 +97,8 @@ public class AiPartnerController {
             @PathVariable Long memberId,
             @PathVariable Long id
     ) {
+        memberAuthorizationService.validateMember(memberId);
+
         return ResponseEntity.ok(
                 aiPartnerService.getPartner(memberId, id)
         );
