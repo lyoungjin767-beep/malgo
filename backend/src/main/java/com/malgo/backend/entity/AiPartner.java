@@ -1,11 +1,18 @@
 package com.malgo.backend.entity;
 
-import jakarta.persistence.*;
 import com.malgo.backend.member.entity.Member;
-import java.time.LocalDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 
-//사용자가 대화할 AI 상대 정보를 저장하는 엔티티
-// 향후 구독 사용자가 AI 메이커에서 만든 커스텀 상대도 이 테이블에 저장
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "ai_partners")
@@ -15,18 +22,14 @@ public class AiPartner {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 커스텀 AI를 만든 회원
-    // 기본 제공 AI는 member = null
+    // 커스텀 AI를 만든 회원. 기본 제공 AI는 member가 null이다.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
 
-    // 화면에 표시할 AI 상대 이름
     @Column(nullable = false, length = 50)
     private String name;
 
-    // 상대방의 국가 코드
-    // 예: US, JP, VN
     @Column(nullable = false, length = 10)
     private String targetCountry;
 
@@ -35,36 +38,24 @@ public class AiPartner {
     @Column(nullable = false, length = 10)
     private String targetLanguage;
 
-    // 사용자와 상대방의 관계
-    // 예: CLIENT, FRIEND, BOSS
     @Column(nullable = false, length = 30)
     private String relationshipType;
 
-    // 상대방의 연령대
-    // 예: CHILD, TEENAGER, COLLEGE_STUDENT, WORKER, SENIOR
     @Column(length = 30)
     private String ageGroup;
 
-    // 성별
-    // 예: FEMALE, MALE
     @Column(length = 20)
     private String gender;
 
-    // 말투 또는 대화 스타일
-    // 예: CASUAL, POLITE, FRIENDLY
     @Column(length = 30)
     private String speechStyle;
 
-    // 사용자가 입력한 상대방의 특징
-    // 긴 설명이 들어갈 수 있으므로 TEXT 사용
     @Column(columnDefinition = "TEXT")
     private String characteristic;
 
-    // 구독 AI 메이커로 생성한 상대인지 여부
     @Column(nullable = false)
     private boolean custom;
 
-    // AI 상대 생성 시간
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -117,7 +108,6 @@ public class AiPartner {
         this.custom = custom;
     }
 
-    // DB에 처음 저장되기 직전에 생성 시간을 자동으로 기록
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
@@ -127,7 +117,9 @@ public class AiPartner {
         return id;
     }
 
-    public Member getMember(){return member;}
+    public Member getMember() {
+        return member;
+    }
 
     public String getName() {
         return name;
@@ -169,7 +161,7 @@ public class AiPartner {
         return createdAt;
     }
 
-    // AI 메이커에서 설정한 정보로 기존 AI 상대 정보를 수정
+    // 커스텀 AI 설정 수정
     public void update(
             String name,
             String targetCountry,

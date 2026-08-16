@@ -4,10 +4,10 @@ public enum SpeechStyle {
     FORMAL,
     POLITE,
     FRIENDLY,
-    AFFECTIONATE,
+    WARM,
     PLAYFUL,
     PLAIN,
-    DIRECT,
+    SINCERE,
     EMOTIONAL,
     DIALECT
 }

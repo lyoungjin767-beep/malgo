@@ -43,6 +43,11 @@ public class UserCustomization {
     @Column(nullable = false, length = 20)
     private ExpressionType expression;
 
+    // 사용 언어
+    @Enumerated(EnumType.STRING)
+    @Column(name = "target_language", nullable = false, length = 10)
+    private LanguageType targetLanguage;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private GenderType gender;
@@ -69,23 +74,34 @@ public class UserCustomization {
             Member member,
             AiPersona aiPersona,
             ExpressionType expression,
+            LanguageType targetLanguage,
             Set<RelationshipType> relationships,
             GenderType gender,
             Set<SpeechStyle> speechStyles
     ) {
         this.member = member;
-        update(aiPersona, expression, relationships, gender, speechStyles);
+
+        update(
+                aiPersona,
+                expression,
+                targetLanguage,
+                relationships,
+                gender,
+                speechStyles
+        );
     }
 
     public void update(
             AiPersona aiPersona,
             ExpressionType expression,
+            LanguageType targetLanguage,
             Set<RelationshipType> relationships,
             GenderType gender,
             Set<SpeechStyle> speechStyles
     ) {
         this.aiPersona = aiPersona;
         this.expression = expression;
+        this.targetLanguage = targetLanguage;
         this.relationships = new HashSet<>(relationships);
         this.gender = gender;
         this.speechStyles = new HashSet<>(speechStyles);

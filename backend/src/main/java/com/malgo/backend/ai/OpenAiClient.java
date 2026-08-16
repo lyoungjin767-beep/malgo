@@ -509,7 +509,7 @@ public class OpenAiClient {
                 - 동일한 표현이라도 문맥에 따라 SAFE일 수 있음을 고려한다.
 
                 - warning 판단은 표현 자체의 격식이나 직설성만으로 결정하지 않고 situation, relationshipType, requestedTone을 반드시 함께 고려한다.
-                - FRIEND + DAILY + CASUAL과 같이 친밀하고 비격식적인 상황에서는 일상적인 반말, 가벼운 농담, 웃음 표현, 친근한 호칭 등을 그 자체만으로 위험 표현으로 판단하지 않는다.
+                - FRIEND + DAILY + FRIENDLY와 같이 친밀하고 비격식적인 상황에서는 일상적인 반말, 가벼운 농담, 웃음 표현, 친근한 호칭 등을 그 자체만으로 위험 표현으로 판단하지 않는다.
                 - targetLanguage에서 자연스럽게 표현만 바꾸면 해결되는 단순한 언어·문화 차이는 warning을 생성하지 않고 naturalTranslation 또는 culturalTranslation에서 자연스럽게 조정한다.
                 - warning은 실제로 상대방에게 오해, 불쾌감, 압박, 모욕, 관계 악화 등의 의미 있는 위험이 예상될 때만 생성한다.
                 - 사소하거나 가능성이 낮은 위험까지 과도하게 경고하지 않는다.

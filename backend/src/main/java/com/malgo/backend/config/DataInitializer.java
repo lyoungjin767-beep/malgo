@@ -47,7 +47,7 @@ public class DataInitializer {
                             "FRIEND",
                             "COLLEGE_STUDENT",
                             "MALE",
-                            "CASUAL",
+                            "FRIENDLY",
                             null,
                             false
                     )
