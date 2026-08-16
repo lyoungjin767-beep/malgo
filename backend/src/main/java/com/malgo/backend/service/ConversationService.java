@@ -71,12 +71,10 @@ public class ConversationService {
                         )
                 );
 
-        String targetLanguage = request.targetLanguage();
-
         if (!member.isMembership()
-                && ("VI".equals(targetLanguage)
-                || "ES".equals(targetLanguage)
-                || "DE".equals(targetLanguage))) {
+                && ("VI".equals(request.targetLanguage())
+                || "ES".equals(request.targetLanguage())
+                || "DE".equals(request.targetLanguage()))) {
 
             throw new IllegalStateException(
                     "프리미엄 언어는 멤버십이 필요합니다."
@@ -158,7 +156,6 @@ public class ConversationService {
                 partner,
                 request.situation(),
                 request.field(),
-                request.targetLanguage(),
                 targetCountry,
                 targetLanguage,
                 relationshipType,
