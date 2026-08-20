@@ -15,6 +15,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -82,6 +83,15 @@ public class AuthController {
                 securityContext,
                 httpRequest,
                 httpResponse
+        );
+
+        return ResponseEntity.ok(memberId);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<Long> currentMember(Authentication authentication) {
+        Long memberId = authService.findMemberIdByUsername(
+                authentication.getName()
         );
 
         return ResponseEntity.ok(memberId);

@@ -3,6 +3,8 @@ package com.malgo.backend.auth.service;
 import com.malgo.backend.exception.AccessDeniedException;
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -22,8 +24,12 @@ public class MemberAuthorizationService {
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new AccessDeniedException("로그인이 필요합니다.");
+        if (authentication == null
+                || authentication instanceof AnonymousAuthenticationToken
+                || !authentication.isAuthenticated()) {
+            throw new AuthenticationCredentialsNotFoundException(
+                    "로그인이 필요합니다."
+            );
         }
 
         Member authenticatedMember = memberRepository

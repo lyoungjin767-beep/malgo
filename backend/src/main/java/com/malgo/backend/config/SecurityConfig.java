@@ -112,7 +112,12 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/v1/auth/signup",
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/logout"
+                        ).permitAll()
                         .requestMatchers("/api/members/*/membership").permitAll()
                         .requestMatchers("/api/conversations/**").permitAll()
                         .requestMatchers("/api/partners/**").permitAll()

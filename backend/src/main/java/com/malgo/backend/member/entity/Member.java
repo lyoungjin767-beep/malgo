@@ -39,6 +39,10 @@ public class Member {
         this.membership = true;
     }
 
+    public void deactivateMembership() {
+        this.membership = false;
+    }
+
     public void increaseChatCount() {
         this.chatCount++;
     }

@@ -3,6 +3,7 @@ package com.malgo.backend.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -19,11 +20,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleAuthentication(
             AuthenticationException e
     ) {
+        String message = e instanceof AuthenticationCredentialsNotFoundException
+                ? e.getMessage()
+                : "아이디 또는 비밀번호가 올바르지 않습니다.";
+
         Map<String, Object> body = Map.of(
                 "timestamp", LocalDateTime.now().toString(),
                 "status", 401,
                 "error", "Unauthorized",
-                "message", "아이디 또는 비밀번호가 올바르지 않습니다."
+                "message", message
         );
 
         return ResponseEntity

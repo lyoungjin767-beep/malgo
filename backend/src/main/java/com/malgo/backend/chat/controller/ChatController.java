@@ -6,6 +6,7 @@ import com.malgo.backend.chat.service.ChatService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,11 +18,12 @@ public class ChatController {
 
     @PostMapping
     public ResponseEntity<ChatResponse> chat(
-            @Valid @RequestBody ChatRequest request
+            @Valid @RequestBody ChatRequest request,
+            Authentication authentication
     ) {
 
         String answer =
-                chatService.chat(request.message());
+                chatService.chat(authentication.getName(), request.message());
 
         return ResponseEntity.ok(
                 new ChatResponse(answer)

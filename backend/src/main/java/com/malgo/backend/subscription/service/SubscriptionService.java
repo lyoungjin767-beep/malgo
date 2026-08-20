@@ -45,6 +45,7 @@ public class SubscriptionService {
         Subscription subscription = getOrCreateSubscription(member);
 
         subscription.activatePremium(null);
+        member.activateMembership();
 
         return toResponse(subscription);
     }
@@ -55,6 +56,7 @@ public class SubscriptionService {
         Subscription subscription = getOrCreateSubscription(member);
 
         subscription.cancel();
+        member.deactivateMembership();
 
         return toResponse(subscription);
     }

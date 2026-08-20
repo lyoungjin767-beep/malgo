@@ -1,5 +1,6 @@
 package com.malgo.backend.subscription.controller;
 
+import com.malgo.backend.auth.service.MemberAuthorizationService;
 import com.malgo.backend.subscription.dto.SubscriptionResponse;
 import com.malgo.backend.subscription.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
@@ -16,11 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
+    private final MemberAuthorizationService memberAuthorizationService;
 
     @GetMapping("/me")
     public ResponseEntity<SubscriptionResponse> getMySubscription(
             @RequestHeader("X-Member-Id") Long memberId
     ) {
+        memberAuthorizationService.validateMember(memberId);
         return ResponseEntity.ok(subscriptionService.getMySubscription(memberId));
     }
 
@@ -28,6 +31,7 @@ public class SubscriptionController {
     public ResponseEntity<SubscriptionResponse> activatePremium(
             @RequestHeader("X-Member-Id") Long memberId
     ) {
+        memberAuthorizationService.validateMember(memberId);
         return ResponseEntity.ok(subscriptionService.activatePremium(memberId));
     }
 
@@ -35,6 +39,7 @@ public class SubscriptionController {
     public ResponseEntity<SubscriptionResponse> cancel(
             @RequestHeader("X-Member-Id") Long memberId
     ) {
+        memberAuthorizationService.validateMember(memberId);
         return ResponseEntity.ok(subscriptionService.cancel(memberId));
     }
 }

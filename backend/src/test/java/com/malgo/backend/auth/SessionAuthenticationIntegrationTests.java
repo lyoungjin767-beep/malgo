@@ -3,6 +3,7 @@ package com.malgo.backend.auth;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -11,6 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.malgo.backend.member.entity.Member;
 import com.malgo.backend.member.repository.MemberRepository;
+import com.malgo.backend.subscription.entity.SubscriptionPlan;
+import com.malgo.backend.subscription.entity.SubscriptionStatus;
+import com.malgo.backend.subscription.repository.SubscriptionRepository;
 import jakarta.servlet.http.HttpSession;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -45,6 +49,9 @@ class SessionAuthenticationIntegrationTests {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private SubscriptionRepository subscriptionRepository;
+
     private Member member;
     private Member otherMember;
 
@@ -71,6 +78,10 @@ class SessionAuthenticationIntegrationTests {
 
     @AfterEach
     void tearDown() {
+        subscriptionRepository.findByMemberId(member.getId())
+                .ifPresent(subscriptionRepository::delete);
+        subscriptionRepository.findByMemberId(otherMember.getId())
+                .ifPresent(subscriptionRepository::delete);
         memberRepository.deleteById(member.getId());
         memberRepository.deleteById(otherMember.getId());
     }
@@ -108,6 +119,85 @@ class SessionAuthenticationIntegrationTests {
     }
 
     @Test
+    void restoresAuthenticatedMemberForAutoLogin() throws Exception {
+        MockHttpSession session = login();
+
+        mockMvc.perform(get("/api/v1/auth/me").session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(member.getId().toString()));
+    }
+
+    @Test
+    void rejectsAutoLoginWithoutSession() throws Exception {
+        mockMvc.perform(get("/api/v1/auth/me"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void upgradesSubscriptionAndMembershipWithAuthenticatedSession()
+            throws Exception {
+        MockHttpSession session = login();
+
+        mockMvc.perform(patch("/api/v1/subscription/me/premium")
+                        .session(session)
+                        .header("X-Member-Id", member.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.memberId").value(member.getId()))
+                .andExpect(jsonPath("$.plan").value("PREMIUM"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+
+        Member updatedMember = memberRepository.findById(member.getId())
+                .orElseThrow();
+
+        assertThat(updatedMember.isMembership()).isTrue();
+        assertThat(subscriptionRepository.findByMemberId(member.getId()))
+                .isPresent()
+                .get()
+                .satisfies(subscription -> {
+                    assertThat(subscription.getPlan())
+                            .isEqualTo(SubscriptionPlan.PREMIUM);
+                    assertThat(subscription.getStatus())
+                            .isEqualTo(SubscriptionStatus.ACTIVE);
+                });
+    }
+
+    @Test
+    void rejectsSubscriptionRequestForAnotherMember() throws Exception {
+        MockHttpSession session = login();
+
+        mockMvc.perform(get("/api/v1/subscription/me")
+                        .session(session)
+                        .header("X-Member-Id", otherMember.getId()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value(
+                        "로그인한 회원과 요청 회원이 일치하지 않습니다."
+                ));
+    }
+
+    @Test
+    void cancelsSubscriptionAndRemovesMembershipWithAuthenticatedSession()
+            throws Exception {
+        MockHttpSession session = login();
+
+        mockMvc.perform(patch("/api/v1/subscription/me/premium")
+                        .session(session)
+                        .header("X-Member-Id", member.getId()))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(patch("/api/v1/subscription/me/cancel")
+                        .session(session)
+                        .header("X-Member-Id", member.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.plan").value("PREMIUM"))
+                .andExpect(jsonPath("$.status").value("CANCELED"));
+
+        Member updatedMember = memberRepository.findById(member.getId())
+                .orElseThrow();
+
+        assertThat(updatedMember.isMembership()).isFalse();
+    }
+
+    @Test
     void rejectsDifferentMemberIdWithAuthenticatedSession() throws Exception {
         MockHttpSession session = login();
 
@@ -134,6 +224,7 @@ class SessionAuthenticationIntegrationTests {
                                   "aiPartnerId": null,
                                   "situation": "BUSINESS",
                                   "field": "IT_DEVELOPMENT",
+                                  "targetLanguage": "EN",
                                   "targetCountry": "US"
                                 }
                                 """.formatted(otherMember.getId())))
